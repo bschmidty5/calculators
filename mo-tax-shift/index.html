@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Missouri HJR 173 — Tax Shift Calculator v3</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inconsolata:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg: #0d0f14; --surface: #141720; --surface2: #1c2030;
+  --border: #252b3b; --border2: #2e3650;
+  --text: #e8ecf5; --muted: #6b7594; --dim: #3d4560;
+  --red: #e84a5f; --green: #2ecc8e; --amber: #f5a623; --blue: #4a9eff; --purple: #a78bfa;
+  --font-d: 'Syne', sans-serif; --font-m: 'Inconsolata', monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--font-m);font-size:13px;min-height:100vh;}
+.hdr{background:var(--surface);border-bottom:1px solid var(--border);padding:1rem 1.75rem;display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;flex-wrap:wrap;}
+.hdr h1{font-family:var(--font-d);font-size:1.4rem;font-weight:800;letter-spacing:-.03em;line-height:1;}
+.hdr h1 em{font-style:normal;color:var(--amber);}
+.hdr p{margin-top:.2rem;color:var(--muted);font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;}
+.badge{background:rgba(248,166,35,.12);border:1px solid rgba(248,166,35,.3);color:var(--amber);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;padding:.25rem .65rem;}
+.main{display:grid;grid-template-columns:355px 1fr;height:calc(100vh - 64px);overflow:hidden;}
+.lp{background:var(--surface);border-right:1px solid var(--border);overflow-y:auto;padding:.9rem;display:flex;flex-direction:column;gap:.75rem;}
+.rp{overflow-y:auto;padding:.9rem;display:flex;flex-direction:column;gap:.75rem;}
+::-webkit-scrollbar{width:4px;height:4px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--border2);}
+.card{background:var(--surface2);border:1px solid var(--border);padding:.8rem .9rem;}
+.ct{font-family:var(--font-d);font-size:.6rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:.7rem;padding-bottom:.45rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.f{margin-bottom:.55rem;}.f:last-child{margin-bottom:0;}
+.f label{display:block;font-size:.63rem;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:.18rem;}
+.f input[type=number],.f select{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--font-m);font-size:.83rem;padding:.28rem .5rem;outline:none;transition:border-color .15s;}
+.f input[type=number]:focus,.f select:focus{border-color:var(--blue);}
+.rr{display:flex;align-items:center;gap:.45rem;}
+.rr input[type=range]{flex:1;cursor:pointer;accent-color:var(--amber);}
+.rv{min-width:48px;text-align:right;font-size:.83rem;color:var(--amber);font-weight:600;}
+/* cats */
+.sec-hdr{font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--blue);padding:.35rem 0 .18rem;border-bottom:1px solid var(--border);margin-bottom:.2rem;margin-top:.45rem;font-family:var(--font-d);font-weight:700;display:flex;align-items:center;justify-content:space-between;}
+.sec-hdr span{display:flex;gap:.2rem;}
+.sec-hdr button{font-size:.52rem;font-family:var(--font-m);background:transparent;border:1px solid var(--border2);color:var(--muted);cursor:pointer;padding:1px 4px;}
+.sec-hdr button:hover{border-color:var(--blue);color:var(--blue);}
+.cr{display:grid;grid-template-columns:13px 1fr 76px 46px;align-items:center;gap:.3rem;padding:.15rem 0;border-bottom:1px solid rgba(37,43,59,.35);}
+.cr:hover{background:rgba(255,255,255,.015);}
+.cc{width:12px;height:12px;border:1px solid var(--border2);background:var(--bg);cursor:pointer;appearance:none;-webkit-appearance:none;transition:all .12s;flex-shrink:0;position:relative;}
+.cc:checked{background:var(--green);border-color:var(--green);}
+.cc:checked::after{content:'✓';color:#000;font-size:8px;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);}
+.cn{font-size:.67rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cn.ex{color:var(--dim);}
+.bi{width:100%;background:transparent;border:none;border-bottom:1px solid var(--border);color:var(--muted);font-family:var(--font-m);font-size:.64rem;text-align:right;padding:0 2px;outline:none;}
+.bi:focus{border-bottom-color:var(--blue);color:var(--text);}
+.cv{font-size:.68rem;text-align:right;color:var(--green);font-weight:600;}
+.cv.z{color:var(--dim);}
+/* metrics */
+.mr{display:grid;grid-template-columns:repeat(4,1fr);gap:.6rem;}
+.mc{background:var(--surface2);border:1px solid var(--border);padding:.7rem .8rem;position:relative;}
+.mc::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;}
+.mc.r::before{background:var(--red);}.mc.g::before{background:var(--green);}.mc.a::before{background:var(--amber);}.mc.b::before{background:var(--blue);}.mc.p::before{background:var(--purple);}
+.ml{font-size:.58rem;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:.25rem;}
+.mv{font-family:var(--font-d);font-size:1.35rem;font-weight:800;line-height:1;letter-spacing:-.02em;}
+.mv.pos{color:var(--green);}.mv.neg{color:var(--red);}.mv.neu{color:var(--text);}.mv.amb{color:var(--amber);}
+.ms{font-size:.58rem;color:var(--muted);margin-top:.22rem;}
+/* rate finder */
+.rf{background:linear-gradient(135deg,rgba(247,166,35,.07),rgba(74,158,255,.05));border:1px solid rgba(247,166,35,.2);padding:.8rem .9rem;}
+.rf-t{font-family:var(--font-d);font-size:.6rem;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--amber);margin-bottom:.65rem;}
+.rf-g{display:grid;grid-template-columns:repeat(4,1fr);gap:.55rem;}
+.ri .rl{font-size:.56rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:.18rem;}
+.ri .rv2{font-family:var(--font-d);font-size:1.1rem;font-weight:800;color:var(--amber);letter-spacing:-.02em;}
+.ri .rs{font-size:.56rem;color:var(--dim);margin-top:.12rem;}
+/* dual */
+.dual{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;}
+/* bars */
+.br{display:flex;align-items:center;gap:.4rem;margin-bottom:.25rem;}
+.bl{width:135px;flex-shrink:0;color:var(--muted);font-size:.62rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.bt{flex:1;height:7px;background:var(--border);}
+.bf{height:100%;transition:width .3s;min-width:0;}
+.ba{min-width:52px;text-align:right;color:var(--text);font-size:.63rem;font-weight:600;}
+/* phase table */
+.pt{width:100%;border-collapse:collapse;font-size:.67rem;}
+.pt th{text-align:left;padding:.28rem .45rem;background:var(--bg);color:var(--muted);font-size:.57rem;letter-spacing:.07em;text-transform:uppercase;border-bottom:1px solid var(--border);}
+.pt td{padding:.28rem .45rem;border-bottom:1px solid rgba(37,43,59,.35);}
+.pt tr.ay td{background:rgba(247,166,35,.05);}
+.pt tr.ay td:first-child{border-left:2px solid var(--amber);}
+.pill{display:inline-block;font-size:.56rem;padding:1px 4px;letter-spacing:.05em;text-transform:uppercase;}
+.pa{background:rgba(232,74,95,.15);color:var(--red);}
+.pp{background:rgba(247,166,35,.15);color:var(--amber);}
+.pd{background:rgba(46,204,142,.15);color:var(--green);}
+.tbox{background:var(--bg);border:1px solid var(--border);padding:.55rem .75rem;margin-top:.45rem;font-size:.64rem;color:var(--muted);line-height:1.65;}
+.tbox strong{color:var(--amber);}
+.cbox{background:var(--bg);border:1px solid rgba(247,166,35,.22);padding:.45rem .65rem;margin-top:.35rem;}
+.cbox .cl{font-size:.56rem;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:.12rem;}
+.cbox .cv2{font-family:var(--font-d);font-size:1.25rem;font-weight:800;color:var(--amber);}
+.cbox .cs{font-size:.56rem;color:var(--dim);margin-top:.08rem;}
+.brdg{background:var(--surface2);border:1px solid var(--border);padding:.75rem .9rem;}
+.brdg-t{font-family:var(--font-d);font-size:.58rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:.55rem;}
+.tr2{display:flex;align-items:center;justify-content:space-between;margin-bottom:.45rem;}
+.tl2{font-size:.65rem;color:var(--muted);}
+.tog{position:relative;width:28px;height:14px;display:inline-block;flex-shrink:0;}
+.tog input{opacity:0;width:0;height:0;}
+.ts{position:absolute;inset:0;background:var(--border2);cursor:pointer;transition:background .2s;}
+.ts::before{content:'';position:absolute;width:10px;height:10px;left:2px;top:2px;background:var(--muted);transition:transform .2s,background .2s;}
+.tog input:checked+.ts{background:rgba(46,204,142,.3);}
+.tog input:checked+.ts::before{transform:translateX(14px);background:var(--green);}
+.cf{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--font-m);font-size:.73rem;padding:.28rem .45rem;outline:none;margin-bottom:.45rem;}
+.cf:focus{border-color:var(--blue);}
+.disc{font-size:.6rem;color:var(--dim);line-height:1.7;padding:.65rem .85rem;border:1px solid var(--border);background:var(--surface);}
+.disc strong{color:var(--muted);}
+@media(max-width:1100px){
+  .main{grid-template-columns:1fr;height:auto;overflow:visible;}
+  .lp{border-right:none;border-bottom:1px solid var(--border);}
+  .mr{grid-template-columns:repeat(2,1fr);}
+  .rf-g{grid-template-columns:repeat(2,1fr);}
+  .dual{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div>
+    <h1>Missouri <em>HJR 173</em> Tax Shift Calculator</h1>
+    <p>125+ Categories · Mortgage Interest Split · MO-Specific Consumption Estimates · Revenue Neutrality Analysis</p>
+  </div>
+  <div class="badge">House 98–54 · Mar 2026 · Senate Pending</div>
+</header>
+
+<div class="main">
+<!-- ═══ LEFT PANEL ═══ -->
+<div class="lp">
+  <div class="card">
+    <div class="ct">Global Parameters</div>
+    <div class="f">
+      <label>Proposed State Sales Tax Rate (%)</label>
+      <div class="rr"><input type="range" id="sR" min="1" max="15" value="7" step="0.1" oninput="syncR(); recalc()"/><span class="rv" id="sRv">7.0%</span></div>
+    </div>
+    <div class="f">
+      <label>Behavioral Spending Boost — when income tax removed (%)</label>
+      <div class="rr"><input type="range" id="bB" min="0" max="20" value="5" step="0.5" oninput="syncB(); recalc()"/><span class="rv" id="bBv">5.0%</span></div>
+    </div>
+    <div class="tr2">
+      <span class="tl2">Apply behavioral boost to revenue estimates</span>
+      <label class="tog"><input type="checkbox" id="apB" checked onchange="recalc()"/><span class="ts"></span></label>
+    </div>
+    <div style="border-top:1px solid var(--border);margin:.45rem 0 .55rem;padding-top:.55rem;">
+      <div style="font-size:.57rem;letter-spacing:.1em;text-transform:uppercase;color:var(--amber);margin-bottom:.45rem;font-family:var(--font-d);font-weight:700;">▸ FY2025 Revenue Target (Actuals)</div>
+      <div class="f"><label>Individual Income Tax Revenue ($B)</label><input type="number" id="iRev" value="9.17" step="0.01" min="0" oninput="recalc()"/></div>
+      <div class="f"><label>State Sales &amp; Use Tax Revenue ($B)</label><input type="number" id="sRev" value="3.22" step="0.01" min="0" oninput="recalc()"/></div>
+      <div class="cbox"><div class="cl">Combined Target — Unified Sales Tax Must Generate</div><div class="cv2" id="cDisp">$12.39B</div><div class="cs">replaces both income tax and existing sales tax</div></div>
+    </div>
+    <div class="f">
+      <label>Income Tax Phase-out Year (HJR 173 target: 2032)</label>
+      <div class="rr"><input type="range" id="pY" min="2026" max="2036" value="2032" step="1" oninput="syncP(); recalc()"/><span class="rv" id="pYv">2032</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ct">Tax Credits — Income Tax Adjustment
+      <span style="display:flex;align-items:center;gap:.35rem;">
+        <span style="font-size:.58rem;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0;">Use gross</span>
+        <label class="tog"><input type="checkbox" id="useGross" onchange="recalc()"/><span class="ts"></span></label>
+      </span>
+    </div>
+    <div style="font-size:.63rem;color:var(--muted);margin-bottom:.6rem;line-height:1.55;">
+      Toggle shows <strong style="color:var(--amber)">gross income tax</strong> (before credits) vs <strong style="color:var(--green)">net</strong> (after credits, the $9.17B actual). Credits already embedded in the $9.17B net figure. Gross shows the higher pre-credit baseline — relevant if credits are eliminated with the income tax.
+    </div>
+
+    <!-- Credit rows: id, label, FY24 redemption $M, type, fate-on-elimination -->
+    <div style="display:grid;grid-template-columns:1fr 55px 55px;gap:.25rem .4rem;margin-bottom:.35rem;">
+      <div style="font-size:.56rem;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;">Credit Program</div>
+      <div style="font-size:.56rem;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;text-align:right;">$M</div>
+      <div style="font-size:.56rem;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;text-align:right;">Type</div>
+    </div>
+    <div id="creditRows"></div>
+
+    <div style="margin-top:.5rem;padding-top:.45rem;border-top:1px solid var(--border);display:grid;grid-template-columns:1fr auto;gap:.25rem;align-items:center;">
+      <div style="font-size:.67rem;color:var(--muted);">Total credits reducing income tax</div>
+      <div style="font-family:var(--font-d);font-size:1.05rem;font-weight:800;color:var(--red);text-align:right;" id="totalCreditsDisp">—</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr auto;gap:.25rem;align-items:center;margin-top:.2rem;">
+      <div style="font-size:.67rem;color:var(--muted);">Gross income tax (before credits)</div>
+      <div style="font-family:var(--font-d);font-size:1.05rem;font-weight:800;color:var(--amber);text-align:right;" id="grossIncomeDisp">—</div>
+    </div>
+    <div style="font-size:.6rem;color:var(--dim);margin-top:.45rem;padding-top:.4rem;border-top:1px solid var(--border);line-height:1.6;">
+      <strong style="color:var(--muted);">Fate if income tax eliminated:</strong><br/>
+      <span style="color:var(--red);">■</span> <strong>Refundable / spending:</strong> State must still pay — convert to direct appropriation<br/>
+      <span style="color:var(--amber);">■</span> <strong>Economic dev (non-refundable):</strong> Vehicle disappears — programs need redesign<br/>
+      <span style="color:var(--blue);">■</span> <strong>SALT Parity (pass-through):</strong> Moot — tied to income tax structure<br/>
+      <span style="color:var(--purple);">■</span> <strong>Individual relief:</strong> Lost benefit unless alternative mechanism created
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ct">Household Inputs</div>
+    <div class="f"><label>Gross Annual Income ($)</label><input type="number" id="hhI" value="75000" step="1000" min="0" oninput="recalc()"/></div>
+    <div class="f"><label>Filing Status</label>
+      <select id="hhF" onchange="recalc()">
+        <option value="single">Single</option>
+        <option value="mfj" selected>Married Filing Jointly</option>
+        <option value="hoh">Head of Household</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ct">Spending Categories &amp; Tax Base <span id="cSum" style="color:var(--green);font-weight:600;font-size:.65rem;">— taxable</span></div>
+    <input class="cf" type="text" id="cFilter" placeholder="🔍 Filter categories..." oninput="renderCats()"/>
+    <div style="display:grid;grid-template-columns:13px 1fr 76px 46px;gap:.3rem;padding:.12rem 0;margin-bottom:.2rem;">
+      <div></div>
+      <div style="font-size:.56rem;color:var(--dim);letter-spacing:.06em;text-transform:uppercase;">Category</div>
+      <div style="font-size:.56rem;color:var(--dim);letter-spacing:.06em;text-transform:uppercase;text-align:right;">MO Base ($B)</div>
+      <div style="font-size:.56rem;color:var(--dim);letter-spacing:.06em;text-transform:uppercase;text-align:right;">Rev($B)</div>
+    </div>
+    <div id="cList"></div>
+    <div style="display:flex;gap:.35rem;margin-top:.55rem;flex-wrap:wrap;">
+      <button onclick="toggleAll(true)" style="flex:1;background:rgba(46,204,142,.1);border:1px solid var(--green);color:var(--green);font-family:var(--font-m);font-size:.63rem;padding:.22rem;cursor:pointer;">✓ Tax All</button>
+      <button onclick="toggleAll(false)" style="flex:1;background:rgba(232,74,95,.1);border:1px solid var(--red);color:var(--red);font-family:var(--font-m);font-size:.63rem;padding:.22rem;cursor:pointer;">✗ Exempt All</button>
+      <button onclick="resetDef()" style="flex:1;background:rgba(107,117,148,.1);border:1px solid var(--dim);color:var(--muted);font-family:var(--font-m);font-size:.63rem;padding:.22rem;cursor:pointer;">↺ Reset</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ RIGHT PANEL ═══ -->
+<div class="rp">
+  <div class="mr">
+    <div class="mc a"><div class="ml">Combined Revenue Target</div><div class="mv amb" id="swTgt">$12.39B</div><div class="ms" id="swTgtS">income + sales replaced</div></div>
+    <div class="mc b"><div class="ml">New Sales Tax Revenue</div><div class="mv" id="swRev">—</div><div class="ms" id="swRevS">taxable base × rate</div></div>
+    <div class="mc r"><div class="ml">Gap / Surplus vs. Target</div><div class="mv" id="swGap">—</div><div class="ms" id="swGapS">—</div></div>
+    <div class="mc g"><div class="ml">Taxable Base Share</div><div class="mv neu" id="swPct">—</div><div class="ms" id="swPctS">of ~$295B MO consumption</div></div>
+  </div>
+
+  <div class="brdg">
+    <div class="brdg-t">Revenue Component Bridge
+      <span style="float:right;font-size:.58rem;font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0;" id="bridgeMode">Showing: Net income tax</span>
+    </div>
+    <div class="br"><div class="bl" id="blILabel">Income Tax (net)</div><div class="bt"><div class="bf" id="bI" style="background:var(--red)"></div></div><div class="ba" id="blI">$9.17B</div></div>
+    <div class="br" id="creditBar" style="display:none;"><div class="bl" style="color:var(--dim);">↳ Credits reducing it</div><div class="bt"><div class="bf" id="bC" style="background:var(--purple);opacity:.6"></div></div><div class="ba" id="blC" style="color:var(--purple);">—</div></div>
+    <div class="br"><div class="bl">Current Sales Tax (replace)</div><div class="bt"><div class="bf" id="bS" style="background:var(--blue)"></div></div><div class="ba" id="blS">$3.22B</div></div>
+    <div class="br" style="margin-top:.28rem;padding-top:.28rem;border-top:1px solid var(--border);">
+      <div class="bl" style="color:var(--amber);font-weight:600;">Combined Target</div><div class="bt"><div class="bf" id="bT" style="background:var(--amber)"></div></div><div class="ba" id="blT">$12.39B</div>
+    </div>
+    <div class="br"><div class="bl" style="color:var(--green);font-weight:600;">New Sales Tax Projected</div><div class="bt"><div class="bf" id="bN" style="background:var(--green)"></div></div><div class="ba" id="blN">—</div></div>
+  </div>
+
+  <div class="rf">
+    <div class="rf-t">⬡ Break-Even Rate Finder — Rate to replace $<span id="rfTgt">12.39</span>B combined target</div>
+    <div class="rf-g">
+      <div class="ri"><div class="rl">Required Rate — Selected Base</div><div class="rv2" id="rfCur">—</div><div class="rs">at selected taxable categories</div></div>
+      <div class="ri"><div class="rl">Required Rate — With Behavioral Boost</div><div class="rv2" id="rfBeh">—</div><div class="rs" id="rfBehS">after spending increase</div></div>
+      <div class="ri"><div class="rl">Required Rate — All Goods &amp; Services</div><div class="rv2" id="rfAll">—</div><div class="rs">full ~$295B MO PCE</div></div>
+      <div class="ri"><div class="rl">Gap at Your Rate</div><div class="rv2" id="rfGap">—</div><div class="rs" id="rfGapS">surplus or shortfall</div></div>
+      <div class="ri"><div class="rl">Current State Sales Tax</div><div class="rv2" style="color:var(--blue)">4.225%</div><div class="rs">3% GR + 1.225% earmarked</div></div>
+      <div class="ri"><div class="rl">No Base Expansion (analyst est.)</div><div class="rv2" style="color:var(--purple)">~13%</div><div class="rs">per HJR 173 legislative debate</div></div>
+      <div class="ri"><div class="rl">Taxable Base Selected</div><div class="rv2 neu" id="rfBase">—</div><div class="rs" id="rfBaseS">of $295B total</div></div>
+      <div class="ri"><div class="rl">Revenue at Your Rate</div><div class="rv2" id="rfRev">—</div><div class="rs">projected new sales tax</div></div>
+    </div>
+  </div>
+
+  <div class="dual">
+    <div class="card">
+      <div class="ct">Household Impact</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.45rem;margin-bottom:.6rem;">
+        <div><div class="ml">Income Tax Saved</div><div style="font-family:var(--font-d);font-size:1.15rem;font-weight:800;color:var(--green)" id="hhSav">—</div><div class="ms" id="hhSavS">—</div></div>
+        <div><div class="ml">New Sales Tax Burden</div><div style="font-family:var(--font-d);font-size:1.15rem;font-weight:800;color:var(--red)" id="hhSal">—</div><div class="ms" id="hhSalS">est. taxable spend</div></div>
+        <div><div class="ml">Net Annual Impact</div><div style="font-family:var(--font-d);font-size:1.15rem;font-weight:800;" id="hhNet">—</div><div class="ms" id="hhNetS">—</div></div>
+        <div><div class="ml">Monthly Δ</div><div style="font-family:var(--font-d);font-size:1.15rem;font-weight:800;" id="hhMo">—</div><div class="ms">per month</div></div>
+      </div>
+      <div style="font-size:.6rem;color:var(--muted);margin-bottom:.3rem;text-transform:uppercase;letter-spacing:.07em;font-family:var(--font-d);font-weight:700;">HJR 173 Phase-Out Trajectory</div>
+      <table class="pt" id="ptHH"></table>
+    </div>
+    <div class="card">
+      <div class="ct">Top Revenue Categories</div>
+      <div id="topBars"></div>
+      <div style="font-size:.6rem;color:var(--muted);margin:.6rem 0 .3rem;text-transform:uppercase;letter-spacing:.07em;font-family:var(--font-d);font-weight:700;">HJR 173 Rate-Cut Trigger Table</div>
+      <table class="pt" id="ptSW"></table>
+      <div class="tbox">Under HJR 173: each <strong>$20M</strong> above FY2025 base of <strong>$13.43B GR</strong> cuts the top income tax rate by <strong>0.01 pp</strong> (max <strong>1.6 pp/yr</strong>). Rate goes to zero when it falls below <strong>1.4%</strong>. Legislature has <strong>3 years</strong> post-ballot approval to expand the tax base. The new unified sales tax must replace both the <strong>$9.17B income tax</strong> and the <strong>$3.22B state sales tax</strong> — combined target <strong id="tboxTgt">$12.39B</strong>.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ct">All Taxable Categories — Revenue at Selected Rate <span style="color:var(--dim);font-weight:400;">(sorted by revenue)</span></div>
+    <div id="fullBars" style="columns:2;column-gap:1.4rem;"></div>
+  </div>
+
+  <!-- ── DISTRIBUTIONAL ANALYSIS ── -->
+  <div class="card">
+    <div class="ct">Distributional Impact — By Income Bracket
+      <span style="font-size:.58rem;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0;">income saved minus sales tax burden</span>
+    </div>
+    <div style="font-size:.62rem;color:var(--muted);margin-bottom:.6rem;line-height:1.55;">
+      Sales taxes are generally regressive — lower-income households spend a higher share of income on taxable goods. Income tax savings favor higher earners who pay more income tax. The net effect per bracket depends on both.
+    </div>
+    <div style="display:grid;grid-template-columns:110px 1fr 70px 70px 60px;gap:.25rem .4rem;margin-bottom:.3rem;">
+      <div style="font-size:.56rem;color:var(--dim);text-transform:uppercase;letter-spacing:.05em;">Income Bracket</div>
+      <div style="font-size:.56rem;color:var(--dim);text-transform:uppercase;letter-spacing:.05em;">Net Impact</div>
+      <div style="font-size:.56rem;color:var(--dim);text-transform:uppercase;letter-spacing:.05em;text-align:right;">Income Tax Saved</div>
+      <div style="font-size:.56rem;color:var(--dim);text-transform:uppercase;letter-spacing:.05em;text-align:right;">Sales Tax Paid</div>
+      <div style="font-size:.56rem;color:var(--dim);text-transform:uppercase;letter-spacing:.05em;text-align:right;">Net</div>
+    </div>
+    <div id="distTable"></div>
+    <div style="font-size:.6rem;color:var(--dim);margin-top:.5rem;line-height:1.6;">
+      ★ Assumes MFJ filing. Sales tax burden = bracket midpoint income × 75% spending rate × taxable fraction × rate. Income tax per bracket uses MO graduated brackets. Consumption share of income declines at higher brackets (lower-income households spend a higher share = regressive effect).
+    </div>
+  </div>
+
+  <!-- ── CREDIT REPLACEMENT COST ── -->
+  <div class="card">
+    <div class="ct">Tax Credit Fate &amp; Replacement Cost
+      <span style="font-size:.58rem;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0;">if income tax eliminated</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.6rem;">
+      <div style="background:var(--bg);border:1px solid var(--border);padding:.5rem .7rem;">
+        <div style="font-size:.58rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.2rem;">Refundable Credits — Must Still Be Paid</div>
+        <div style="font-family:var(--font-d);font-size:1.2rem;font-weight:800;color:var(--red);" id="refundCost">—</div>
+        <div style="font-size:.58rem;color:var(--dim);margin-top:.15rem;">Circuit Breaker + Working Family Credit — convert to direct appropriation</div>
+      </div>
+      <div style="background:var(--bg);border:1px solid var(--border);padding:.5rem .7rem;">
+        <div style="font-size:.58rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.2rem;">Econ Dev Credits — Vehicle Lost</div>
+        <div style="font-family:var(--font-d);font-size:1.2rem;font-weight:800;color:var(--amber);" id="econCost">—</div>
+        <div style="font-size:.58rem;color:var(--dim);margin-top:.15rem;">LIHTC, Historic Pres., MO Works, Quality Jobs etc. — need new incentive mechanism</div>
+      </div>
+      <div style="background:var(--bg);border:1px solid var(--border);padding:.5rem .7rem;">
+        <div style="font-size:.58rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.2rem;">SALT Parity — Automatically Moot</div>
+        <div style="font-family:var(--font-d);font-size:1.2rem;font-weight:800;color:var(--blue);" id="saltCost">—</div>
+        <div style="font-size:.58rem;color:var(--dim);margin-top:.15rem;">Pass-through entity credit tied to income tax — disappears with income tax</div>
+      </div>
+      <div style="background:var(--bg);border:1px solid var(--border);padding:.5rem .7rem;">
+        <div style="font-size:.58rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.2rem;">Individual Relief — Lost Benefit</div>
+        <div style="font-family:var(--font-d);font-size:1.2rem;font-weight:800;color:var(--purple);" id="reliefCost">—</div>
+        <div style="font-size:.58rem;color:var(--dim);margin-top:.15rem;">Rural opportunity, other relief credits — filers lose benefit unless alternative created</div>
+      </div>
+    </div>
+    <table class="pt" id="creditFateTable">
+      <tr><th>Credit Program</th><th>FY24 Redemption</th><th>Type</th><th>Fate if Income Tax Eliminated</th></tr>
+    </table>
+  </div>
+
+  <!-- ── YEAR-BY-YEAR TRANSITION TIMELINE ── -->
+  <div class="card">
+    <div class="ct">Full Revenue Transition Timeline — HJR 173 Scenario</div>
+    <div style="font-size:.62rem;color:var(--muted);margin-bottom:.55rem;line-height:1.55;">
+      Projects income tax revenue (declining by HJR 173 trigger), new sales tax revenue (growing as base expands), and the cumulative revenue gap or surplus each year from 2026 to 2032.
+    </div>
+    <table class="pt" id="timelineTable">
+      <tr><th>Year</th><th>Income Tax Rate</th><th>Income Tax Rev</th><th>New Sales Tax Rev</th><th>Total Revenue</th><th>vs. Combined Target</th><th>Status</th></tr>
+    </table>
+    <div style="font-size:.6rem;color:var(--dim);margin-top:.45rem;line-height:1.6;">
+      Income tax revenue declines proportionally as rate phases down. Sales tax revenue modeled at current selected rate and base, with optional behavioral boost already applied. Revenue gap in early years reflects the transition period before income tax is fully eliminated.
+    </div>
+  </div>
+
+  <div class="disc">
+    <strong>Sources &amp; Methodology:</strong> FY2025 actuals from MO Office of Administration: income tax $9.17B, state sales/use tax $3.22B; combined target $12.39B. Missouri total PCE ~$295B (BEA 2023 scaled). <strong>Housing:</strong> Mortgage interest and principal are exempt under virtually all sales tax structures. <strong>Business Inputs — Currently Taxable:</strong> These are already in the $3.22B base (§144.030 does not exempt non-manufacturing business purchases — office supplies, restaurant gear, telecom, general facility utilities, construction materials for non-exempt entities). <strong>Business Inputs — Currently Exempt:</strong> Manufacturing machinery, raw materials, ag inputs, and goods-for-resale are exempt under §144.030 &amp; §144.054. Taxing goods-for-resale ($18.5B) would cause severe tax pyramiding. <strong>B2B Services — Currently Exempt:</strong> Missouri exempts most services from sales tax, with narrow exceptions (telecom, fabrication labor). Professional &amp; business services is Missouri's largest GDP sector at $52.1B; buyer-side B2B service spending across MO businesses is estimated at ~$55–65B. Taxing B2B services risks tax cascading — costs embed in final consumer prices — and most states that broadly tax services carve out B2B transactions. HJR 173 gives the legislature broad authority with no guardrails; legislators have named personal services (haircuts, plumbers) as likely initial targets, not B2B services. Business telecom is already taxable and defaulted on. All other B2B services default to exempt. HJR 173 passed MO House 98–54 March 12, 2026; Senate pending. For policy analysis only.
+  </div>
+  </div>
+</div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+// 125+ CATEGORY DATA — Missouri-specific 2025 estimates ($B)
+// ══════════════════════════════════════════
+const CATS = [
+// ── FOOD & BEVERAGE (~$38B) ──
+// BEA PCE MO: food-at-home ~$14.8B, food services ~$18B, alcohol ~$3.5B
+{s:'Food & Beverage',id:'g_fresh',  n:'Fresh produce & meat',              b:4.20, d:false},
+{s:'Food & Beverage',id:'g_pkg',    n:'Packaged & canned groceries',       b:5.10, d:false},
+{s:'Food & Beverage',id:'g_dairy',  n:'Dairy & eggs',                      b:2.10, d:false},
+{s:'Food & Beverage',id:'g_bak',    n:'Bakery & breads',                   b:1.10, d:false},
+{s:'Food & Beverage',id:'g_frz',    n:'Frozen foods',                      b:1.30, d:false},
+{s:'Food & Beverage',id:'g_baby',   n:'Baby food & infant formula',        b:0.30, d:false},
+{s:'Food & Beverage',id:'g_org',    n:'Organic & specialty grocery',       b:0.70, d:false},
+{s:'Food & Beverage',id:'r_sit',    n:'Full-service restaurants',          b:5.80, d:true },
+{s:'Food & Beverage',id:'r_fast',   n:'Fast food & quick service',         b:5.90, d:true },
+{s:'Food & Beverage',id:'r_coffee', n:'Coffee shops & cafés',              b:1.20, d:true },
+{s:'Food & Beverage',id:'r_bar',    n:'Bars & taverns',                    b:1.40, d:true },
+{s:'Food & Beverage',id:'r_cater',  n:'Catering & event food service',     b:0.70, d:true },
+{s:'Food & Beverage',id:'r_deliv',  n:'Food delivery apps (DoorDash etc.)',b:0.90, d:true },
+{s:'Food & Beverage',id:'a_off',    n:'Alcohol — off-premise (retail)',    b:1.90, d:true },
+{s:'Food & Beverage',id:'a_on',     n:'Alcohol — on-premise (bars/rest.)', b:1.20, d:true },
+{s:'Food & Beverage',id:'f_farm',   n:"Farmers markets & farm-direct",     b:0.30, d:false},
+
+// ── HOUSING (~$55B excl. mortg. principal) ──
+// ACS 2023 MO: 2.49M HH; 61% owner (~1.52M); renter ~0.97M
+// Rent: 970K × $1,115/mo × 12 = $13.0B (incl. util-inclusive units)
+// Mortgage payments: 1.52M × $1,200/mo (est. median) × 12 = $21.9B total
+//   Interest: ~$13.0B; Principal: ~$9.0B (principal = debt repayment, not consumption)
+// Property tax: 0.82% × $247K × 1.52M = $3.1B
+// Homeowner ins: ~$1,800/yr × 1.52M = $2.7B; Renter ins: ~$180/yr × 0.97M = $0.2B
+{s:'Housing',id:'h_rent',   n:'Residential rent payments',          b:12.90, d:false},
+{s:'Housing',id:'h_mort_i', n:'Mortgage INTEREST payments',         b:13.00, d:false},
+{s:'Housing',id:'h_mort_p', n:'Mortgage PRINCIPAL repayments',      b: 9.00, d:false},
+{s:'Housing',id:'h_ptax',   n:'Property taxes (owner-occupied)',    b: 3.10, d:false},
+{s:'Housing',id:'h_hins',   n:'Homeowner insurance premiums',       b: 2.70, d:false},
+{s:'Housing',id:'h_rins',   n:'Renter insurance premiums',          b: 0.20, d:false},
+{s:'Housing',id:'h_hoa',    n:'HOA & condo association fees',       b: 0.73, d:false},
+{s:'Housing',id:'h_maint',  n:'Home maintenance & repair services', b: 3.60, d:true },
+{s:'Housing',id:'h_imprv',  n:'Home improvement materials (retail)',b: 2.80, d:true },
+{s:'Housing',id:'h_furn',   n:'Furniture & home furnishings',       b: 2.60, d:true },
+{s:'Housing',id:'h_appl',   n:'Major appliances (washer, fridge)',  b: 1.50, d:true },
+{s:'Housing',id:'h_lawn',   n:'Lawn care & landscaping services',   b: 1.10, d:true },
+{s:'Housing',id:'h_pest',   n:'Pest control & extermination',       b: 0.30, d:true },
+{s:'Housing',id:'h_move',   n:'Moving & storage services',          b: 0.50, d:true },
+{s:'Housing',id:'h_decor',  n:'Home décor & small furnishings',     b: 0.90, d:true },
+{s:'Housing',id:'h_re_comm',n:'Real estate commissions (sales)',    b: 3.50, d:false},
+{s:'Housing',id:'h_title',  n:'Title insurance & closing costs',    b: 0.80, d:false},
+
+// ── UTILITIES (~$10B) ──
+// EIA: MO avg residential electricity $122/mo; nat gas $70/mo; water $50/mo
+// 2.49M HH × ($122+$70+$50)×12 = ~$7.2B; telecom adds ~$8B
+{s:'Utilities',id:'u_elec',  n:'Electricity — residential',          b:3.65, d:false},
+{s:'Utilities',id:'u_gas',   n:'Natural gas (home heating)',          b:1.75, d:false},
+{s:'Utilities',id:'u_water', n:'Water & sewer service',              b:1.25, d:false},
+{s:'Utilities',id:'u_trash', n:'Trash & recycling collection',        b:0.50, d:false},
+{s:'Utilities',id:'u_inter', n:'Broadband / internet service',        b:2.30, d:true },
+{s:'Utilities',id:'u_cable', n:'Cable & satellite TV',                b:1.60, d:true },
+{s:'Utilities',id:'u_cell',  n:'Wireless / cell phone service',       b:3.20, d:true },
+{s:'Utilities',id:'u_land',  n:'Landline phone service',              b:0.30, d:true },
+
+// ── HEALTHCARE (~$57B total; PCE consumer-facing ~$28B) ──
+// CMS NHE: MO per capita ~$9,100 × 6.24M = $56.8B
+// Hospital ~45% of MO healthcare spending (above national 31%)
+// Consumer out-of-pocket + private premiums (employee share) ~28% of total
+{s:'Healthcare',id:'hc_hosp_ip',n:'Hospital — inpatient services',     b:5.80, d:false},
+{s:'Healthcare',id:'hc_hosp_op',n:'Hospital — outpatient & ER',        b:4.20, d:false},
+{s:'Healthcare',id:'hc_pcp',    n:'Primary care physician visits',      b:2.10, d:false},
+{s:'Healthcare',id:'hc_spec',   n:'Specialist physician visits',        b:2.80, d:false},
+{s:'Healthcare',id:'hc_dent',   n:'Dental services',                    b:2.40, d:false},
+{s:'Healthcare',id:'hc_vis',    n:'Vision care & eyeglasses',           b:0.80, d:false},
+{s:'Healthcare',id:'hc_mh',     n:'Mental health & counseling',         b:1.10, d:false},
+{s:'Healthcare',id:'hc_pt',     n:'Physical therapy & rehabilitation',  b:0.90, d:false},
+{s:'Healthcare',id:'hc_chiro',  n:'Chiropractic & alternative care',   b:0.50, d:false},
+{s:'Healthcare',id:'hc_urgent', n:'Urgent care centers',                b:0.70, d:false},
+{s:'Healthcare',id:'hc_rx_br',  n:'Prescription drugs — brand name',   b:3.10, d:false},
+{s:'Healthcare',id:'hc_rx_gen', n:'Prescription drugs — generic',      b:2.20, d:false},
+{s:'Healthcare',id:'hc_rx_spec',n:'Specialty pharmaceuticals',          b:1.40, d:false},
+{s:'Healthcare',id:'hc_otc',    n:'OTC drugs, vitamins & supplements',  b:1.40, d:true },
+{s:'Healthcare',id:'hc_medsup', n:'Medical equipment & supplies',       b:0.90, d:false},
+{s:'Healthcare',id:'hc_nh',     n:'Nursing home & assisted living',     b:4.50, d:false},
+{s:'Healthcare',id:'hc_home',   n:'Home health aide services',          b:3.20, d:false},
+{s:'Healthcare',id:'hc_ins_emp',n:'Health insurance — employee share',  b:5.20, d:false},
+{s:'Healthcare',id:'hc_ins_ind',n:'Health insurance — individual market',b:1.80,d:false},
+{s:'Healthcare',id:'hc_vet',    n:'Veterinary services',                b:1.20, d:true },
+
+// ── TRANSPORTATION (~$32B) ──
+// EIA: MO ~2.1B gallons motor fuel; NADA: ~180K new cars; BLS CE MO avg HH transport $12,800
+{s:'Transportation',id:'t_newcar',  n:'New vehicle purchases',           b:8.10, d:true },
+{s:'Transportation',id:'t_usedcar', n:'Used vehicle purchases',          b:5.40, d:true },
+{s:'Transportation',id:'t_lease',   n:'Vehicle lease payments',          b:1.80, d:true },
+{s:'Transportation',id:'t_autoins', n:'Auto insurance premiums',         b:3.90, d:false},
+{s:'Transportation',id:'t_autopart',n:'Auto parts & accessories',        b:2.10, d:true },
+{s:'Transportation',id:'t_autofix', n:'Auto repair & maintenance svcs',  b:3.00, d:true },
+{s:'Transportation',id:'t_gas_reg', n:'Regular gasoline (personal use)', b:5.20, d:false},
+{s:'Transportation',id:'t_gas_dsl', n:'Diesel fuel (personal vehicles)', b:1.10, d:false},
+{s:'Transportation',id:'t_park',    n:'Parking fees & tolls',            b:0.40, d:true },
+{s:'Transportation',id:'t_ride',    n:'Rideshare (Uber, Lyft)',          b:0.60, d:true },
+{s:'Transportation',id:'t_transit', n:'Public transit & bus service',    b:0.30, d:false},
+{s:'Transportation',id:'t_air_dom', n:'Airline tickets — domestic',      b:2.20, d:true },
+{s:'Transportation',id:'t_air_intl',n:'Airline tickets — international', b:0.50, d:true },
+{s:'Transportation',id:'t_rail',    n:'Amtrak & intercity rail',         b:0.10, d:true },
+{s:'Transportation',id:'t_rental',  n:'Car rentals',                     b:0.40, d:true },
+
+// ── FINANCIAL SERVICES (~$22B) ──
+// BEA PCE: financial svcs & insurance MO ~$21.8B
+// NOTE: Mortgage interest captured under Housing (h_mort_i) — NOT double-counted here
+// Credit card interest = cost of borrowing (financial service) — differs from mortgage interest
+{s:'Financial Services',id:'f_bankfee',  n:'Bank fees & account service charges',  b:1.20, d:true },
+{s:'Financial Services',id:'f_cc_fee',   n:'Credit card annual fees',               b:0.60, d:true },
+{s:'Financial Services',id:'f_cc_int',   n:'Credit card interest charges',          b:2.20, d:false},
+{s:'Financial Services',id:'f_invest',   n:'Investment advisory & brokerage fees',  b:2.10, d:true },
+{s:'Financial Services',id:'f_life',     n:'Life insurance premiums',               b:3.40, d:false},
+{s:'Financial Services',id:'f_prop_ins', n:'Property & casualty insurance (non-auto)',b:2.60,d:false},
+{s:'Financial Services',id:'f_disab',    n:'Disability insurance premiums',          b:0.80, d:false},
+{s:'Financial Services',id:'f_annuity',  n:'Annuities & retirement products',        b:1.90, d:false},
+{s:'Financial Services',id:'f_payday',   n:'Payday loan & consumer lending fees',    b:0.40, d:true },
+{s:'Financial Services',id:'f_atm',      n:'ATM fees & wire transfer charges',       b:0.20, d:true },
+{s:'Financial Services',id:'f_finplan',  n:'Financial planning & advisory svcs',     b:0.60, d:true },
+
+// ── PROFESSIONAL & LEGAL SERVICES (~$5B) ──
+{s:'Prof. & Legal Svcs',id:'p_legal_c', n:'Civil legal services (personal)',         b:1.10, d:true },
+{s:'Prof. & Legal Svcs',id:'p_legal_e', n:'Estate planning, wills & probate',       b:0.40, d:true },
+{s:'Prof. & Legal Svcs',id:'p_taxprep', n:'Tax preparation services',               b:0.50, d:true },
+{s:'Prof. & Legal Svcs',id:'p_acct',    n:'Personal accounting & bookkeeping',      b:0.40, d:true },
+{s:'Prof. & Legal Svcs',id:'p_arch',    n:'Residential architecture services',      b:0.50, d:true },
+{s:'Prof. & Legal Svcs',id:'p_eng',     n:'Engineering (residential)',              b:0.30, d:true },
+{s:'Prof. & Legal Svcs',id:'p_consult', n:'Personal consulting services',           b:0.80, d:true },
+{s:'Prof. & Legal Svcs',id:'p_notary',  n:'Notary & document processing',           b:0.10, d:true },
+
+// ── PERSONAL SERVICES (~$8B) ──
+{s:'Personal Services',id:'ps_hair',   n:'Hair salons & barbershops',               b:1.30, d:true },
+{s:'Personal Services',id:'ps_nail',   n:'Nail salons & spas',                      b:0.60, d:true },
+{s:'Personal Services',id:'ps_massage',n:'Massage therapy',                         b:0.40, d:true },
+{s:'Personal Services',id:'ps_tattoo', n:'Tattoo & piercing studios',               b:0.20, d:true },
+{s:'Personal Services',id:'ps_dry',    n:'Dry cleaning & laundry services',         b:0.40, d:true },
+{s:'Personal Services',id:'ps_laund',  n:'Laundromat self-service',                 b:0.20, d:true },
+{s:'Personal Services',id:'ps_prod',   n:'Personal care products (retail)',          b:2.10, d:true },
+{s:'Personal Services',id:'ps_gym',    n:'Gym memberships & fitness centers',       b:0.90, d:true },
+{s:'Personal Services',id:'ps_tan',    n:'Tanning & beauty services',               b:0.20, d:true },
+{s:'Personal Services',id:'ps_fun',    n:'Funeral & burial services',               b:0.50, d:false},
+{s:'Personal Services',id:'ps_wed',    n:'Wedding planning & event services',       b:0.50, d:true },
+
+// ── EDUCATION (~$9B) ──
+{s:'Education',id:'e_k12p',  n:'Private K-12 tuition',                             b:0.70, d:false},
+{s:'Education',id:'e_colp',  n:'Private college tuition & fees',                   b:2.10, d:false},
+{s:'Education',id:'e_colpub',n:'Public college tuition & fees',                    b:1.80, d:false},
+{s:'Education',id:'e_voc',   n:'Vocational & trade school tuition',                b:0.40, d:false},
+{s:'Education',id:'e_online',n:'Online courses & e-learning subscriptions',        b:0.50, d:false},
+{s:'Education',id:'e_tut',   n:'Tutoring & test prep services',                    b:0.40, d:true },
+{s:'Education',id:'e_cc',    n:'Childcare & daycare services',                     b:2.80, d:false},
+{s:'Education',id:'e_books', n:'Textbooks & academic supplies',                    b:0.50, d:true },
+{s:'Education',id:'e_ext',   n:'Youth sports & extracurricular activities',        b:0.60, d:true },
+
+// ── ENTERTAINMENT & RECREATION (~$17B) ──
+{s:'Entertainment',id:'en_svid',  n:'Streaming video (Netflix, Disney+, etc.)',    b:0.90, d:true },
+{s:'Entertainment',id:'en_smus',  n:'Streaming music (Spotify, Apple Music)',      b:0.30, d:true },
+{s:'Entertainment',id:'en_soft',  n:'Software & app subscriptions',                b:1.80, d:true },
+{s:'Entertainment',id:'en_ghw',   n:'Video game hardware & consoles',              b:0.50, d:true },
+{s:'Entertainment',id:'en_gsw',   n:'Video game software & digital downloads',     b:0.50, d:true },
+{s:'Entertainment',id:'en_sprtk', n:'Professional sports event tickets',           b:0.50, d:true },
+{s:'Entertainment',id:'en_coltk', n:'College sports event tickets',                b:0.40, d:true },
+{s:'Entertainment',id:'en_conc',  n:'Concerts & live music events',                b:0.60, d:true },
+{s:'Entertainment',id:'en_theat', n:'Theater, opera & performing arts',            b:0.30, d:true },
+{s:'Entertainment',id:'en_mov',   n:'Movie theater admissions',                    b:0.40, d:true },
+{s:'Entertainment',id:'en_mus',   n:'Museums, zoos & science centers',             b:0.30, d:true },
+{s:'Entertainment',id:'en_amus',  n:'Amusement parks & arcades',                   b:0.50, d:true },
+{s:'Entertainment',id:'en_gamb',  n:'Casino gambling & lottery tickets',           b:1.20, d:true },
+{s:'Entertainment',id:'en_sport', n:'Sporting goods & outdoor equipment',          b:1.40, d:true },
+{s:'Entertainment',id:'en_hobby', n:'Hobbies & crafts supplies',                   b:0.80, d:true },
+{s:'Entertainment',id:'en_pet',   n:'Pet food & pet supplies',                     b:1.10, d:true },
+{s:'Entertainment',id:'en_petgr', n:'Pet grooming, boarding & vet supplies',       b:0.50, d:true },
+{s:'Entertainment',id:'en_hotel', n:'Hotels & short-term lodging (Airbnb, etc.)',  b:1.80, d:true },
+{s:'Entertainment',id:'en_vac',   n:'Vacation packages & travel agents',            b:0.80, d:true },
+{s:'Entertainment',id:'en_camp',  n:'Camping sites & RV parks',                   b:0.30, d:true },
+{s:'Entertainment',id:'en_books', n:'Books, magazines & newspapers (retail)',      b:0.50, d:true },
+{s:'Entertainment',id:'en_photo', n:'Photography services (personal/events)',      b:0.30, d:true },
+
+// ── RETAIL GOODS (~$28B) ──
+{s:'Retail Goods',id:'r_cloth',  n:'Clothing & apparel',                           b:5.20, d:true },
+{s:'Retail Goods',id:'r_shoe',   n:'Footwear & shoes',                             b:1.30, d:true },
+{s:'Retail Goods',id:'r_jewel',  n:'Jewelry, watches & accessories',               b:0.70, d:true },
+{s:'Retail Goods',id:'r_elec',   n:'Consumer electronics & computers',             b:3.20, d:true },
+{s:'Retail Goods',id:'r_phone',  n:'Smartphones & tablets (hardware)',             b:1.40, d:true },
+{s:'Retail Goods',id:'r_toys',   n:'Toys, games & baby gear',                      b:1.10, d:true },
+{s:'Retail Goods',id:'r_tools',  n:'Tools & hardware (retail)',                    b:1.20, d:true },
+{s:'Retail Goods',id:'r_garden', n:'Garden supplies, seeds & plants',              b:0.70, d:true },
+{s:'Retail Goods',id:'r_office', n:'Office & school supplies',                     b:0.80, d:true },
+{s:'Retail Goods',id:'r_clean',  n:'Cleaning & household products',                b:1.40, d:true },
+{s:'Retail Goods',id:'r_gift',   n:'Gift wrap, cards & party supplies',            b:0.30, d:true },
+{s:'Retail Goods',id:'r_lugg',   n:'Luggage & travel accessories',                 b:0.30, d:true },
+{s:'Retail Goods',id:'r_music',  n:'Musical instruments & accessories',            b:0.30, d:true },
+{s:'Retail Goods',id:'r_art',    n:'Art supplies & fine art (retail)',              b:0.20, d:true },
+{s:'Retail Goods',id:'r_gun',    n:'Firearms, ammunition & hunting gear',          b:0.50, d:true },
+
+// ── AGRICULTURE — Mostly exempt under current MO law ──
+// Farm machinery, ag inputs exempt under §144.030; services generally not taxed
+{s:'Agriculture',id:'ag_eq',      n:'Farm machinery & equipment',               b:2.80, d:false},
+{s:'Agriculture',id:'ag_feed',    n:'Livestock feed & supplements',              b:1.40, d:false},
+{s:'Agriculture',id:'ag_seed',    n:'Seed for commercial crop production',       b:0.50, d:false},
+{s:'Agriculture',id:'ag_fert',    n:'Fertilizer, herbicides & pesticides',       b:0.90, d:false},
+{s:'Agriculture',id:'ag_parts',   n:'Ag equipment repair parts',                 b:0.30, d:false},
+{s:'Agriculture',id:'ag_svc',     n:'Agricultural custom services (crop svcs)',  b:0.60, d:false},
+{s:'Agriculture',id:'ag_live',    n:'Livestock purchased for resale/production', b:1.20, d:false},
+
+// ── BUSINESS INPUTS — Currently TAXABLE (already in the $3.22B base) ──
+// These are taxable under current MO law and must remain covered by the new unified sales tax.
+// §144.030 does NOT exempt non-manufacturing business purchases.
+// Restaurants, retailers, service businesses pay sales tax on their operational purchases.
+{s:'Business Inputs — Currently Taxable',id:'bi_office_sup', n:'Office supplies (paper, pens, toner)',          b:0.85, d:true },
+{s:'Business Inputs — Currently Taxable',id:'bi_office_furn',n:'Office furniture & fixtures',                   b:0.70, d:true },
+{s:'Business Inputs — Currently Taxable',id:'bi_office_eq',  n:'Office equipment (computers, printers)',         b:1.10, d:true },
+{s:'Business Inputs — Currently Taxable',id:'bi_rest_eq',    n:'Restaurant equipment & smallwares',             b:0.80, d:true },
+{s:'Business Inputs — Currently Taxable',id:'bi_rest_sup',   n:'Restaurant supplies (napkins, packaging)',       b:0.45, d:true },
+{s:'Business Inputs — Currently Taxable',id:'bi_retail_fix', n:'Retail store fixtures & displays',              b:0.40, d:true },
+{s:'Business Inputs — Currently Taxable',id:'bi_janitorial', n:'Janitorial supplies & cleaning products',       b:0.55, d:true },
+{s:'Business Inputs — Currently Taxable',id:'bi_uniforms',   n:'Work uniforms & safety gear (non-mfg)',         b:0.35, d:true },
+{s:'Business Inputs — Currently Taxable',id:'bi_signage',    n:'Business signage & promotional materials',       b:0.30, d:true },
+{s:'Business Inputs — Currently Taxable',id:'bi_util_gen',   n:'Utilities — general facility (non-mfg)',        b:1.20, d:true },
+{s:'Business Inputs — Currently Taxable',id:'bi_telecom',    n:'Telecom / phone services (business)',            b:1.60, d:true },
+{s:'Business Inputs — Currently Taxable',id:'bi_vehicles',   n:'Commercial vehicle purchases (non-fleet exempt)',b:0.90, d:true },
+{s:'Business Inputs — Currently Taxable',id:'bi_construct',  n:'Construction materials (non-exempt entities)',   b:2.10, d:true },
+{s:'Business Inputs — Currently Taxable',id:'bi_print',      n:'Printing & copying services',                   b:0.30, d:true },
+{s:'Business Inputs — Currently Taxable',id:'bi_security',   n:'Security systems & monitoring (non-mfg)',        b:0.50, d:true },
+{s:'Business Inputs — Currently Taxable',id:'bi_advert',     n:'Advertising materials & promotional items',      b:0.65, d:true },
+
+// ── BUSINESS INPUTS — Currently EXEMPT, Potentially Expanded Under HJR 173 ──
+// These are NOT in the current $3.22B base. Expanding to cover these would grow the base.
+// Manufacturing machinery/equipment/raw materials: §144.030 & §144.054 exempt
+// Agricultural inputs: exempt (covered above)
+// Resale inventory: exempt (resale certificate)
+// Professional/legal/accounting services: not taxable under current MO law (services generally exempt)
+{s:'Business Inputs — Currently Exempt',id:'bx_mfg_mach',  n:'Manufacturing machinery & equipment',            b:3.80, d:false},
+{s:'Business Inputs — Currently Exempt',id:'bx_mfg_raw',   n:'Raw materials used directly in production',      b:4.20, d:false},
+{s:'Business Inputs — Currently Exempt',id:'bx_mfg_chem',  n:'Industrial chemicals & process supplies',        b:1.10, d:false},
+{s:'Business Inputs — Currently Exempt',id:'bx_mfg_util',  n:'Utilities consumed in manufacturing processes',  b:0.90, d:false},
+{s:'Business Inputs — Currently Exempt',id:'bx_mfg_parts', n:'Replacement parts for manufacturing equipment',  b:0.70, d:false},
+{s:'Business Inputs — Currently Exempt',id:'bx_resale',    n:'Goods purchased for resale (resale cert.)',       b:18.50,d:false},
+{s:'Business Inputs — Currently Exempt',id:'bx_biz_svcs',  n:'B2B professional services (legal, acctg, IT)',   b:8.50, d:false},
+{s:'Business Inputs — Currently Exempt',id:'bx_saas_biz',  n:'SaaS & cloud software (business subscriptions)', b:2.40, d:false},
+{s:'Business Inputs — Currently Exempt',id:'bx_freight',   n:'Freight, shipping & logistics services',         b:1.80, d:false},
+{s:'Business Inputs — Currently Exempt',id:'bx_leases',    n:'Business equipment leases',                      b:1.40, d:false},
+{s:'Business Inputs — Currently Exempt',id:'bx_research',  n:'R&D materials & lab supplies (mfg-related)',     b:0.60, d:false},
+
+// ── B2B SERVICES — Currently Exempt, Could Be Taxed Under HJR 173 ──
+// Missouri currently exempts most services from sales tax (narrow exceptions: telecom, fabrication labor).
+// These represent the largest untapped base in any broad expansion.
+// MO professional & business services GDP: $52.1B (BEA 2024). Not all GDP = taxable B2B purchases;
+// buyer-side B2B service spending in MO estimated at ~$55-65B across categories below.
+// Notes: (1) Taxing B2B services risks tax pyramiding — costs embedded in final goods prices.
+//        (2) Many states that tax services exempt B2B purchases to reduce cascading.
+//        (3) Speaker Yolanda Young named haircuts, salon visits, plumbers as likely targets.
+//        (4) HJR 173 gives legislature broad authority — no guardrails specified in bill text.
+
+// --- Legal, Accounting & Finance ---
+{s:'B2B Services — Currently Exempt',id:'bs_legal_corp',  n:'Corporate legal services (law firms)',           b:2.80, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_legal_lit',   n:'Litigation & dispute resolution services',       b:1.20, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_legal_ip',    n:'Intellectual property & patent services',        b:0.40, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_acct_audit',  n:'Audit & assurance services (CPA firms)',         b:0.90, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_acct_tax',    n:'Business tax preparation & compliance',          b:0.70, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_acct_book',   n:'Bookkeeping & payroll processing services',      b:0.80, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_fin_adv',     n:'Investment banking & financial advisory',        b:1.10, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_fin_risk',    n:'Risk management & actuarial services',           b:0.50, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_fin_insbroker',n:'Insurance brokerage & agent commissions (B2B)', b:1.60, d:false},
+
+// --- Management & Strategy Consulting ---
+{s:'B2B Services — Currently Exempt',id:'bs_mgmt_strat',  n:'Management & strategy consulting',               b:1.80, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_mgmt_ops',    n:'Operations & supply chain consulting',           b:0.90, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_mgmt_hr',     n:'HR consulting & organizational development',     b:0.70, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_mgmt_fin_cons',n:'Financial & restructuring consulting',          b:0.60, d:false},
+
+// --- IT & Technology Services ---
+// IT services are Missouri's fastest-growing B2B segment; broadly exempt under current law
+{s:'B2B Services — Currently Exempt',id:'bs_it_msp',      n:'Managed IT services & outsourcing (MSPs)',       b:2.20, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_it_cloud',    n:'Cloud computing & hosting services (B2B)',       b:2.80, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_it_saas_b2b', n:'SaaS / enterprise software subscriptions',       b:3.10, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_it_dev',      n:'Custom software development services',           b:1.40, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_it_cyber',    n:'Cybersecurity services & monitoring',            b:0.80, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_it_data',     n:'Data analytics & business intelligence svcs',    b:0.70, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_it_support',  n:'IT helpdesk & technical support services',       b:0.60, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_it_telecom_biz',n:'Business telecom & data networking svcs',      b:1.50, d:true }, // currently taxable
+{s:'B2B Services — Currently Exempt',id:'bs_it_hardware_maint',n:'IT hardware maintenance & repair',          b:0.40, d:false},
+
+// --- Marketing & Advertising ---
+{s:'B2B Services — Currently Exempt',id:'bs_mkt_digital', n:'Digital marketing & SEO services',               b:1.10, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_mkt_agency',  n:'Advertising agency services',                    b:1.30, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_mkt_pr',      n:'Public relations & communications',              b:0.40, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_mkt_research', n:'Market research & customer insights',            b:0.30, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_mkt_creative', n:'Graphic design & creative services',            b:0.50, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_mkt_events',   n:'Event planning & trade show services (B2B)',    b:0.40, d:false},
+
+// --- Human Resources & Staffing ---
+{s:'B2B Services — Currently Exempt',id:'bs_hr_staffing', n:'Temporary staffing & labor services',            b:2.40, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_hr_peo',      n:'PEO / HR outsourcing services',                  b:0.80, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_hr_recruit',  n:'Executive search & recruiting services',         b:0.60, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_hr_training', n:'Corporate training & development programs',      b:0.50, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_hr_benefits', n:'Employee benefits administration services',      b:0.40, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_hr_eap',      n:'Employee assistance programs (EAP)',             b:0.15, d:false},
+
+// --- Real Estate & Facilities (B2B) ---
+{s:'B2B Services — Currently Exempt',id:'bs_re_mgmt',     n:'Commercial property management services',        b:1.20, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_re_broker',   n:'Commercial real estate brokerage (leasing)',     b:0.80, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_fac_clean',   n:'Commercial janitorial & cleaning services',      b:0.70, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_fac_maint',   n:'Commercial facility maintenance & repair',       b:0.90, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_fac_secure',  n:'Commercial security guard services',             b:0.50, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_fac_landscape',n:'Commercial landscaping & groundskeeping',       b:0.40, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_fac_pest',    n:'Commercial pest control services',               b:0.20, d:false},
+
+// --- Logistics, Transportation & Supply Chain ---
+{s:'B2B Services — Currently Exempt',id:'bs_log_freight',  n:'Freight brokerage & 3PL logistics services',   b:2.10, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_log_warehouse', n:'Warehousing & distribution services',          b:1.30, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_log_courier',   n:'Courier & last-mile delivery services (B2B)',  b:0.60, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_log_customs',   n:'Customs brokerage & freight forwarding',       b:0.30, d:false},
+
+// --- Construction & Engineering (B2B) ---
+{s:'B2B Services — Currently Exempt',id:'bs_constr_gen',   n:'General contractor services (commercial)',      b:3.50, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_constr_arch',  n:'Architectural services (commercial projects)',  b:0.70, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_constr_eng',   n:'Civil & structural engineering services',       b:0.80, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_constr_env',   n:'Environmental consulting & remediation',        b:0.30, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_constr_survey', n:'Land surveying & geotechnical services',       b:0.20, d:false},
+
+// --- Healthcare & Scientific (B2B) ---
+{s:'B2B Services — Currently Exempt',id:'bs_sci_lab',      n:'Clinical & diagnostic lab services (B2B)',      b:0.80, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_sci_research',  n:'Contract research & testing services',         b:0.60, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_sci_pharma_svc',n:'Pharmaceutical R&D & regulatory services',    b:0.40, d:false},
+
+// --- Other Business Support Services ---
+{s:'B2B Services — Currently Exempt',id:'bs_supp_photoprint',n:'Commercial printing & reprographics',        b:0.35, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_supp_transcr',   n:'Transcription, translation & interpreting',  b:0.20, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_supp_call',      n:'Call center & customer service outsourcing', b:0.90, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_supp_collect',   n:'Debt collection & credit reporting svcs',    b:0.40, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_supp_photo_biz', n:'Commercial photography & video production',  b:0.30, d:false},
+{s:'B2B Services — Currently Exempt',id:'bs_supp_courier_doc',n:'Document management & shredding services',  b:0.20, d:false},
+];
+
+const MO_PCE = 295.0;
+let cSt = {};
+
+function initSt(){ for(const c of CATS) cSt[c.id]={taxable:c.d, base:c.b}; }
+
+// ══════════════════════════════════════════
+// MISSOURI TAX CREDITS — FY2024 redemption data
+// Source: MOST Policy Initiative Report Jan 2025, MO Office of Administration
+// type: 'salt'=SALT Parity/pass-through, 'econ'=economic development (non-refundable),
+//        'refund'=refundable/spending program, 'relief'=individual relief (non-refundable)
+// fate: what happens to this credit if income tax is eliminated
+// ══════════════════════════════════════════
+const CREDITS = [
+  // ── Largest redemptions (FY2024, MO OA data via MOST Policy Initiative) ──
+  {id:'salt',    n:'SALT Parity Act (pass-through entity)',  m:396.8, type:'salt',   fate:'Moot — directly tied to income tax structure; disappears automatically'},
+  {id:'moworks', n:'Missouri Works (job creation)',          m:114.5, type:'econ',   fate:'Non-refundable; vehicle (income tax) gone — program needs redesign or direct subsidy'},
+  {id:'lihtc',   n:'Low-Income Housing Tax Credit (LIHTC)', m: 98.9, type:'econ',   fate:'Non-refundable; must convert to direct appropriation or new credit vehicle'},
+  {id:'histpres',n:'Historic Preservation Tax Credit',      m: 85.0, type:'econ',   fate:'Non-refundable; vehicle gone — must be redesigned (significant economic impact)'},
+  {id:'qualijob',n:'Missouri Quality Jobs',                 m: 55.0, type:'econ',   fate:'Non-refundable; vehicle gone — major incentive tool needs replacement'},
+  {id:'scptc',   n:'Senior Citizen Property Tax (Circuit Breaker)', m:48.0, type:'refund', fate:'REFUNDABLE — state pays this as spending; must convert to direct appropriation'},
+  {id:'newmkt',  n:'New Markets Tax Credit',                m: 30.0, type:'econ',   fate:'Non-refundable; vehicle gone — new market investment incentive at risk'},
+  {id:'wfc',     n:'Working Family Credit (non-refundable state EITC)', m:22.0, type:'econ',   fate:'Non-refundable — requires income tax liability to claim; vehicle gone, lowest-income filers lose benefit entirely (they received nothing anyway due to non-refundable structure)'},
+  {id:'ahap',    n:'Affordable Housing Assistance Program (AHAP)', m:18.0, type:'econ', fate:'Non-refundable; vehicle gone — convert to direct housing grant'},
+  {id:'infra',   n:'Infrastructure Development Tax Credit', m: 15.0, type:'econ',   fate:'Non-refundable; vehicle gone — infrastructure financing tool at risk'},
+  {id:'brownfield',n:'Brownfield Remediation Tax Credit',   m: 12.0, type:'econ',   fate:'Non-refundable; vehicle gone — environmental cleanup incentive at risk'},
+  {id:'disabled',n:'Disability Employment Tax Credit',      m:  8.0, type:'econ',   fate:'Non-refundable; vehicle gone'},
+  {id:'childcare_credit',n:'Childcare Contribution Credit', m:  6.0, type:'econ',   fate:'Non-refundable; vehicle gone'},
+  {id:'returndev',n:'Rural Opportunity Zone / Return to MO',m:  5.0, type:'relief', fate:'Non-refundable individual relief; vehicle gone'},
+  {id:'smallbiz',n:'Small Business Investment Credit',      m:  4.5, type:'econ',   fate:'Non-refundable; vehicle gone'},
+  {id:'agriculture_credit',n:'Agricultural Product Utilization Credit',m:3.5,type:'econ',fate:'Non-refundable; vehicle gone'},
+  {id:'other_credits',n:'All other credits (21 programs)',  m: 40.0, type:'econ',   fate:'Mix of non-refundable economic dev and individual relief credits; vehicles gone'},
+];
+
+const TYPE_COLOR = {salt:'var(--blue)', econ:'var(--amber)', refund:'var(--red)', relief:'var(--purple)'};
+const TYPE_LABEL = {salt:'SALT', econ:'ECON', refund:'REFUND', relief:'RELIEF'};
+
+function renderCredits(){
+  const rows = document.getElementById('creditRows');
+  const netRev = parseFloat(document.getElementById('iRev').value) || 9.17;
+  const totalM = CREDITS.reduce((s,c)=>s+c.m, 0);
+  const totalB = totalM / 1000;
+  const gross = netRev + totalB;
+  if(!rows) return { totalB, gross };
+  rows.innerHTML = '';
+  for(const c of CREDITS){
+    rows.innerHTML += `
+      <div style="display:grid;grid-template-columns:1fr 55px 55px;gap:.25rem .4rem;padding:.15rem 0;border-bottom:1px solid rgba(37,43,59,.3);" title="${c.fate}">
+        <div style="font-size:.64rem;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.n}</div>
+        <div style="font-size:.64rem;color:var(--muted);text-align:right;">$${c.m.toFixed(1)}M</div>
+        <div style="text-align:right;"><span style="font-size:.52rem;padding:1px 4px;background:rgba(255,255,255,.06);color:${TYPE_COLOR[c.type]};letter-spacing:.04em;">${TYPE_LABEL[c.type]}</span></div>
+      </div>`;
+  }
+  const el742=$id('totalCreditsDisp'); if(el742) el742.textContent='$'+totalM.toFixed(0)+'M';
+  const el743=$id('grossIncomeDisp'); if(el743) el743.textContent='$'+gross.toFixed(2)+'B';
+  return { totalB, gross };
+}
+
+
+function moTax(agi, filing){
+  const std={single:14600,mfj:29200,hoh:21900};
+  let tx=Math.max(0,agi-(std[filing]||14600));
+  const br=[[1121,.015],[2242,.02],[3363,.025],[4484,.03],[5605,.035],[6726,.04],[7847,.045],[8968,.05],[Infinity,.047]];
+  let tax=0,prev=0;
+  for(const [l,r] of br){ if(tx<=0)break; const ch=Math.min(tx,l-prev); tax+=ch*r; tx-=ch; prev=l; }
+  return tax;
+}
+
+function syncR(){ document.getElementById('sRv').textContent=(+document.getElementById('sR').value).toFixed(1)+'%'; }
+function syncB(){ document.getElementById('bBv').textContent=(+document.getElementById('bB').value).toFixed(1)+'%'; }
+function syncP(){ document.getElementById('pYv').textContent=document.getElementById('pY').value; }
+
+const fB=(n)=>(n<0?'-':'')+'$'+Math.abs(n).toFixed(2)+'B';
+const fD=(n,d=0)=>(n<0?'−':'')+'$'+Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+
+// Build a stable section index map so we never embed raw section names in HTML attributes
+const SEC_LIST = [...new Set(CATS.map(c=>c.s))];
+const SEC_IDX  = Object.fromEntries(SEC_LIST.map((s,i)=>[s,i]));
+
+function renderCats(){
+  const filt=(document.getElementById('cFilter').value||'').toLowerCase();
+  const list=document.getElementById('cList');
+  list.innerHTML='';
+  const sR=+document.getElementById('sR').value/100;
+  const bh=document.getElementById('apB').checked?(+document.getElementById('bB').value/100):0;
+  let tc=0;
+  for(const sec of SEC_LIST){
+    const cats=CATS.filter(c=>c.s===sec&&(c.n.toLowerCase().includes(filt)||sec.toLowerCase().includes(filt)));
+    if(!cats.length) continue;
+    const idx=SEC_IDX[sec];
+    // Use section index in onclick to avoid embedding special chars in HTML attributes
+    list.innerHTML+=`<div class="sec-hdr">${sec}<span>
+      <button onclick="toggleSecIdx(${idx},true)">Tax</button>
+      <button onclick="toggleSecIdx(${idx},false)">Exempt</button>
+    </span></div>`;
+    for(const c of cats){
+      const taxed=cSt[c.id]?.taxable??c.d;
+      const base=cSt[c.id]?.base??c.b;
+      const rev=taxed?base*(1+bh)*sR:0;
+      if(taxed) tc++;
+      list.innerHTML+=`<div class="cr" id="row-${c.id}">
+        <input type="checkbox" class="cc" id="chk-${c.id}" ${taxed?'checked':''} onchange="onTog('${c.id}')"/>
+        <div class="cn ${taxed?'':'ex'}" id="nm-${c.id}" title="${c.n.replace(/&/g,'&amp;')}">${c.n}</div>
+        <input type="number" class="bi" id="base-${c.id}" value="${base}" step="0.05" min="0" oninput="onBase('${c.id}')"/>
+        <div class="cv ${taxed?'':'z'}" id="rev-${c.id}">${taxed?rev.toFixed(2):'—'}</div>
+      </div>`;
+    }
+  }
+  const cSumEl=document.getElementById('cSum'); if(cSumEl) cSumEl.textContent=tc+' taxable';
+}
+
+function onTog(id){
+  const ck=document.getElementById('chk-'+id).checked;
+  cSt[id]=cSt[id]||{}; cSt[id].taxable=ck;
+  document.getElementById('nm-'+id)?.classList.toggle('ex',!ck);
+  document.getElementById('rev-'+id)?.classList.toggle('z',!ck);
+  recalc();
+}
+function onBase(id){
+  const v=parseFloat(document.getElementById('base-'+id)?.value)||0;
+  cSt[id]=cSt[id]||{}; cSt[id].base=v; recalc();
+}
+function toggleAll(t){ for(const c of CATS) cSt[c.id]={taxable:t,base:cSt[c.id]?.base??c.b}; renderCats(); recalc(); }
+function toggleSecIdx(idx,t){ const sec=SEC_LIST[idx]; for(const c of CATS.filter(c=>c.s===sec)) cSt[c.id]={taxable:t,base:cSt[c.id]?.base??c.b}; renderCats(); recalc(); }
+function resetDef(){ initSt(); renderCats(); recalc(); }
+
+// Safe DOM helpers — never throws on null, logs missing IDs to console
+function $id(id){ const el=document.getElementById(id); if(!el) console.warn('Missing element:',id); return el; }
+function setText(id,v){ const el=$id(id); if(el) el.textContent=v; }
+function setClass(id,v){ const el=$id(id); if(el) el.className=v; }
+function setStyle(id,prop,v){ const el=$id(id); if(el) el.style[prop]=v; }
+function setHTML(id,v){ const el=$id(id); if(el) el.innerHTML=v; }
+
+function recalc(){
+  const sR=+($id('sR')?.value||0)/100;
+  const bh=($id('apB')?.checked)?(+($id('bB')?.value||0)/100):0;
+  const useGross = $id('useGross')?.checked || false;
+  const netIncomeTaxRev = parseFloat($id('iRev')?.value)||9.17;
+  const sRev=parseFloat($id('sRev')?.value)||3.22;
+
+  // Compute credit totals
+  const { totalB: creditTotalB, gross: grossIncomeTaxRev } = renderCredits();
+  const incomeTaxRev = useGross ? grossIncomeTaxRev : netIncomeTaxRev;
+  const comb = incomeTaxRev + sRev;
+  const creditNote = useGross
+    ? `gross $${grossIncomeTaxRev.toFixed(2)}B (before $${(creditTotalB*1000).toFixed(0)}M credits)`
+    : `net $${netIncomeTaxRev.toFixed(2)}B (after $${(creditTotalB*1000).toFixed(0)}M credits)`;
+  const pY=+($id('pY')?.value||2032);
+  const hhI=parseFloat($id('hhI')?.value)||0;
+  const hhF=$id('hhF')?.value||'mfj';
+
+  // combined target displays
+  const ct='$'+comb.toFixed(2)+'B';
+  setText('cDisp',ct);
+  setText('swTgt',ct);
+  setText('swTgtS',`${creditNote} + $${sRev.toFixed(2)}B sales`);
+  setText('rfTgt',comb.toFixed(2));
+  setText('tboxTgt','$'+comb.toFixed(2)+'B');
+
+  // calc base & revenue
+  let taxBase=0, totalBase=0;
+  const revData=[];
+  for(const c of CATS){
+    const taxed=cSt[c.id]?.taxable??c.d;
+    const base=cSt[c.id]?.base??c.b;
+    totalBase+=base;
+    const bb=base*(1+bh);
+    if(taxed){ taxBase+=bb; revData.push({...c,base,rev:bb*sR,taxed:true}); }
+    else revData.push({...c,base,rev:0,taxed:false});
+  }
+  const newSalesRev=taxBase*sR;
+  const gap=newSalesRev-comb;
+
+  // update cat rev column
+  for(const c of CATS){
+    const el=document.getElementById('rev-'+c.id);
+    if(!el) continue;
+    const taxed=cSt[c.id]?.taxable??c.d;
+    const base=cSt[c.id]?.base??c.b;
+    if(taxed){ el.textContent=(base*(1+bh)*sR).toFixed(2); el.classList.remove('z'); }
+    else{ el.textContent='—'; el.classList.add('z'); }
+  }
+  setText('cSum', revData.filter(c=>c.taxed).length+' taxable');
+
+  // statewide metrics
+  setText('swRev', fB(newSalesRev));
+  setClass('swRev', 'mv '+(newSalesRev>=comb?'pos':'neg'));
+  setText('swRevS', taxBase.toFixed(1)+'B base × '+(sR*100).toFixed(1)+'%');
+  setText('swGap', fB(gap));
+  setClass('swGap', 'mv '+(gap>=0?'pos':'neg'));
+  setText('swGapS', gap>=0?'revenue surplus':'revenue shortfall');
+  setText('swPct', (taxBase/MO_PCE*100).toFixed(1)+'%');
+  setText('swPctS', taxBase.toFixed(1)+'B of ~$'+MO_PCE+'B MO PCE');
+
+  // bridge bars
+  const bmax=Math.max(incomeTaxRev,sRev,comb,newSalesRev,grossIncomeTaxRev)*1.05||1;
+  const sb=(id,v)=>{ setStyle(id,'width',Math.min(v/bmax*100,100)+'%'); };
+
+  sb('bI', incomeTaxRev);
+  setText('blI', (useGross?'Gross ':'Net ')+'$'+incomeTaxRev.toFixed(2)+'B');
+  setText('blILabel', useGross?'Income Tax (gross, pre-credit)':'Income Tax (net, post-credit)');
+  setStyle('bI','background', useGross?'var(--amber)':'var(--red)');
+  setText('bridgeMode', useGross
+    ? `Gross view: +$${(creditTotalB*1000).toFixed(0)}M credits shown`
+    : `Net view: credits already in $${netIncomeTaxRev.toFixed(2)}B`);
+
+  const creditBar=$id('creditBar');
+  if(creditBar){
+    if(useGross){
+      creditBar.style.display='flex';
+      sb('bC', creditTotalB);
+      setText('blC', '-$'+(creditTotalB*1000).toFixed(0)+'M');
+    } else {
+      creditBar.style.display='none';
+    }
+  }
+
+  sb('bS',sRev); setText('blS','$'+sRev.toFixed(2)+'B');
+  sb('bT',comb); setText('blT','$'+comb.toFixed(2)+'B');
+  sb('bN',newSalesRev);
+  setStyle('bN','background', newSalesRev>=comb?'var(--green)':'var(--red)');
+  setText('blN','$'+newSalesRev.toFixed(2)+'B');
+
+  // rate finder
+  const rfC=taxBase>0?(comb/taxBase*100):null;
+  const rfAll=comb/MO_PCE*100;
+  setText('rfCur', rfC!=null?rfC.toFixed(2)+'%':'—');
+  setText('rfBeh', rfC!=null?rfC.toFixed(2)+'%':'—');
+  setText('rfBehS', 'boost '+(+($id('bB')?.value||0)).toFixed(1)+'% already applied to base');
+  setText('rfAll', rfAll.toFixed(2)+'%');
+  setText('rfGap', fB(gap));
+  setStyle('rfGap','color', gap>=0?'var(--green)':'var(--red)');
+  setText('rfGapS', gap>=0?'surplus':'shortfall');
+  setText('rfBase', '$'+taxBase.toFixed(1)+'B');
+  setText('rfBaseS', 'of $'+MO_PCE+'B total');
+  setText('rfRev', fB(newSalesRev));
+  setStyle('rfRev','color', newSalesRev>=comb?'var(--green)':'var(--red)');
+
+  // household
+  const fullTax=moTax(hhI,hhF);
+  const taxFrac=totalBase>0?taxBase/totalBase:0;
+  const hhTaxSpend=hhI*0.75*taxFrac;
+  const hhNewSales=hhTaxSpend*sR;
+  const hhNet=fullTax-hhNewSales;
+  setText('hhSav', fD(fullTax));
+  setText('hhSavS', 'Eff. rate: '+(hhI>0?(fullTax/hhI*100).toFixed(2):0)+'%');
+  setText('hhSal', fD(hhNewSales));
+  setText('hhSalS', fD(hhTaxSpend)+' est. taxable');
+  const nEl=$id('hhNet');
+  if(nEl){ nEl.textContent=(hhNet>=0?'+':'')+fD(hhNet); nEl.style.color=hhNet>=0?'var(--green)':'var(--red)'; }
+  setText('hhNetS', hhNet>=0?'net gain':'net loss');
+  const mEl=$id('hhMo');
+  if(mEl){ mEl.textContent=(hhNet/12>=0?'+':'−')+'$'+(Math.abs(hhNet/12)).toLocaleString('en-US',{maximumFractionDigits:0}); mEl.style.color=hhNet>=0?'var(--green)':'var(--red)'; }
+
+  // HH phase-out table
+  const phHH=$id('ptHH');
+  if(phHH){
+    phHH.innerHTML='<tr><th>Year</th><th>Top Rate</th><th>HH Tax</th><th>Savings vs. 2026</th><th>Status</th></tr>';
+    let rt=4.70;
+    for(let yr=2026;yr<=2036;yr++){
+      const t=fullTax*(rt/4.70); const sav=fullTax-t;
+      phHH.innerHTML+=`<tr class="${yr===2026?'ay':''}"><td>${yr}${yr===2026?' ◀':''}</td><td>${rt.toFixed(2)}%</td><td>${fD(t)}</td><td style="color:${sav>0?'var(--green)':'var(--muted)'}">+${fD(sav)}</td><td><span class="pill ${rt===0?'pd':rt<4.7?'pp':'pa'}">${rt===0?'ZERO':rt<4.7?'PHASE':'CURRENT'}</span></td></tr>`;
+      rt=Math.max(0,rt-1.60); if(rt<=1.4)rt=0; if(rt===0&&yr>pY)break;
+    }
+  }
+
+  // SW trigger table
+  const phSW=$id('ptSW');
+  if(phSW){
+    phSW.innerHTML='<tr><th>Year</th><th>Top Rate</th><th>Max Cut/Yr</th><th>GR Needed for Max Cut</th><th>Status</th></tr>';
+    let rr=4.70;
+    for(let yr=2026;yr<=2036;yr++){
+      if(rr<=0){phSW.innerHTML+=`<tr><td>${yr}</td><td>0.00%</td><td>—</td><td>—</td><td><span class="pill pd">ZERO</span></td></tr>`;break;}
+      phSW.innerHTML+=`<tr class="${yr===2026?'ay':''}"><td>${yr}</td><td>${rr.toFixed(2)}%</td><td>1.60 pp</td><td>$16.63B GR</td><td><span class="pill pp">ACTIVE</span></td></tr>`;
+      rr=Math.max(0,rr-1.60); if(rr<=1.4)rr=0;
+    }
+  }
+
+  // top bars
+  const sorted=revData.filter(c=>c.rev>0).sort((a,b)=>b.rev-a.rev).slice(0,12);
+  const mxR=sorted[0]?.rev||1;
+  setHTML('topBars', sorted.map(c=>`<div class="br"><div class="bl" title="${c.n.replace(/&/g,'&amp;')}">${c.n}</div><div class="bt"><div class="bf" style="width:${c.rev/mxR*100}%;background:var(--blue)"></div></div><div class="ba">$${c.rev.toFixed(2)}B</div></div>`).join(''));
+
+  // full bars
+  const allS=revData.filter(c=>c.rev>0).sort((a,b)=>b.rev-a.rev);
+  const mxA=allS[0]?.rev||1;
+  setHTML('fullBars', allS.map(c=>{
+    const p=c.rev/mxA*100;
+    const h=p>66?'var(--green)':p>33?'var(--blue)':'var(--purple)';
+    return `<div class="br" style="break-inside:avoid;"><div class="bl" title="${c.n.replace(/&/g,'&amp;')}">${c.n}</div><div class="bt"><div class="bf" style="width:${p}%;background:${h}"></div></div><div class="ba">$${c.rev.toFixed(2)}B</div></div>`;
+  }).join(''));
+
+  // ── DISTRIBUTIONAL ANALYSIS ──
+  // Each bracket: [label, midpointIncome, spendShareOfIncome, moHHcount(thousands)]
+  // Spend share declines at higher incomes (regressivity source)
+  const BRACKETS = [
+    { lbl:'Under $25K',   mid:15000,  spendShare:0.92, hh:380 },
+    { lbl:'$25K–$50K',   mid:37500,  spendShare:0.85, hh:490 },
+    { lbl:'$50K–$75K',   mid:62500,  spendShare:0.78, hh:430 },
+    { lbl:'$75K–$100K',  mid:87500,  spendShare:0.72, hh:320 },
+    { lbl:'$100K–$150K', mid:125000, spendShare:0.65, hh:300 },
+    { lbl:'$150K–$250K', mid:200000, spendShare:0.55, hh:180 },
+    { lbl:'Over $250K',  mid:400000, spendShare:0.40, hh: 80 },
+  ];
+  const distTaxFrac = totalBase > 0 ? taxBase / totalBase : 0;
+  const distEl = document.getElementById('distTable');
+  distEl.innerHTML = '';
+  const maxNetAbs = Math.max(...BRACKETS.map(b => {
+    const itSaved = moTax(b.mid,'mfj');
+    const salesBurden = b.mid * b.spendShare * distTaxFrac * sR;
+    return Math.abs(itSaved - salesBurden);
+  }), 1);
+  for(const b of BRACKETS){
+    const itSaved = moTax(b.mid,'mfj');
+    const salesBurden = b.mid * b.spendShare * distTaxFrac * sR;
+    const net = itSaved - salesBurden;
+    const pct = Math.abs(net) / maxNetAbs * 100;
+    const barColor = net >= 0 ? 'var(--green)' : 'var(--red)';
+    const itPct = b.mid > 0 ? (itSaved/b.mid*100).toFixed(1) : '0';
+    const stPct = b.mid > 0 ? (salesBurden/b.mid*100).toFixed(1) : '0';
+    const netPct = b.mid > 0 ? (Math.abs(net)/b.mid*100).toFixed(1) : '0';
+    distEl.innerHTML += `
+      <div style="display:grid;grid-template-columns:110px 1fr 70px 70px 60px;gap:.25rem .4rem;padding:.22rem 0;border-bottom:1px solid rgba(37,43,59,.35);align-items:center;">
+        <div style="font-size:.66rem;color:var(--text);">${b.lbl}</div>
+        <div style="display:flex;align-items:center;gap:.3rem;">
+          <div style="flex:1;height:8px;background:var(--border);position:relative;">
+            <div style="position:absolute;${net<0?'right:50%':'left:50%'};top:0;bottom:0;width:${pct/2}%;background:${barColor};"></div>
+            <div style="position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--border2);"></div>
+          </div>
+        </div>
+        <div style="font-size:.63rem;color:var(--green);text-align:right;">+${fD(itSaved)}<br/><span style="color:var(--dim);font-size:.57rem;">${itPct}% of inc.</span></div>
+        <div style="font-size:.63rem;color:var(--red);text-align:right;">-${fD(salesBurden)}<br/><span style="color:var(--dim);font-size:.57rem;">${stPct}% of inc.</span></div>
+        <div style="font-size:.68rem;font-weight:700;text-align:right;color:${barColor};">${net>=0?'+':''}${fD(net)}<br/><span style="color:var(--dim);font-size:.57rem;">${net>=0?'+':'−'}${netPct}%</span></div>
+      </div>`;
+  }
+
+  // ── CREDIT FATE TABLE ──
+  let refundM=0, econM=0, saltM=0, reliefM=0;
+  for(const c of CREDITS){
+    if(c.type==='refund') refundM+=c.m;
+    else if(c.type==='econ') econM+=c.m;
+    else if(c.type==='salt') saltM+=c.m;
+    else if(c.type==='relief') reliefM+=c.m;
+  }
+  setText('refundCost','$'+refundM.toFixed(0)+'M/yr');
+  setText('econCost','$'+econM.toFixed(0)+'M/yr');
+  setText('saltCost','$'+saltM.toFixed(0)+'M/yr');
+  setText('reliefCost','$'+reliefM.toFixed(0)+'M/yr');
+  const fateTable=$id('creditFateTable');
+  if(fateTable){
+    fateTable.innerHTML='<tr><th>Credit Program</th><th>FY24 Redemption</th><th>Type</th><th>Fate if Income Tax Eliminated</th></tr>';
+    for(const c of CREDITS){
+      const col=TYPE_COLOR[c.type], lbl=TYPE_LABEL[c.type];
+      fateTable.innerHTML+=`<tr><td style="font-size:.64rem;">${c.n}</td><td style="font-size:.64rem;text-align:right;">$${c.m.toFixed(1)}M</td><td style="text-align:center;"><span class="pill" style="background:rgba(255,255,255,.05);color:${col};">${lbl}</span></td><td style="font-size:.6rem;color:var(--dim);">${c.fate}</td></tr>`;
+    }
+  }
+
+  // ── YEAR-BY-YEAR TRANSITION TIMELINE ──
+  const tlTable=$id('timelineTable');
+  if(tlTable){
+    tlTable.innerHTML=`<tr><th>Year</th><th>Income Tax Rate</th><th>Income Tax Rev</th><th>New Sales Tax Rev</th><th>Total Revenue</th><th>vs. $${comb.toFixed(2)}B Target</th><th>Status</th></tr>`;
+    let tlRate=4.70;
+    for(let yr=2026; yr<=2032; yr++){
+      const itRevThisYr = incomeTaxRev*(tlRate/4.70);
+      const expansionFactor = Math.min(1,(yr-2026)/3);
+      const stRevThisYr = newSalesRev*(0.3+0.7*expansionFactor);
+      const totalRevThisYr = itRevThisYr+stRevThisYr;
+      const vsTarget = totalRevThisYr-comb;
+      const statusText = vsTarget>=0?'Surplus':yr<=2028?'Transition Gap':'Shortfall';
+      const statusClass = vsTarget>=0?'pd':'pp';
+      tlTable.innerHTML+=`<tr class="${yr===2026?'ay':''}"><td>${yr}${yr===2026?' ◀':''}</td><td>${tlRate.toFixed(2)}%</td><td style="color:var(--red);">${fB(itRevThisYr)}</td><td style="color:var(--blue);">${fB(stRevThisYr)}</td><td style="font-weight:600;">${fB(totalRevThisYr)}</td><td style="color:${vsTarget>=0?'var(--green)':'var(--red)'};">${vsTarget>=0?'+':''}${fB(vsTarget)}</td><td><span class="pill ${statusClass}">${statusText}</span></td></tr>`;
+      tlRate=Math.max(0,tlRate-1.60); if(tlRate<=1.4) tlRate=0;
+    }
+    tlTable.innerHTML+=`<tr><td>2032 (full)</td><td>0.00%</td><td style="color:var(--dim);">$0</td><td style="color:var(--green);">${fB(newSalesRev)}</td><td style="font-weight:600;">${fB(newSalesRev)}</td><td style="color:${gap>=0?'var(--green)':'var(--red)'};">${gap>=0?'+':''}${fB(gap)}</td><td><span class="pill ${gap>=0?'pd':'pa'}">${gap>=0?'Revenue Neutral':'Shortfall'}</span></td></tr>`;
+  }
+}
+
+initSt(); renderCats(); renderCredits(); recalc();
+</script></body></html>
