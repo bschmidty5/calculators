@@ -1,0 +1,565 @@
+import { useState } from "react";
+
+const CCW_LOGO = "data:image/png;base64,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";
+
+const INDUSTRY_DEFAULTS = {
+  "Manufacturing": { pctChildren: 35, turnoverRate: 20 },
+  "Healthcare": { pctChildren: 40, turnoverRate: 25 },
+  "Retail / Hospitality": { pctChildren: 30, turnoverRate: 45 },
+  "Finance / Professional Services": { pctChildren: 30, turnoverRate: 15 },
+  "Education": { pctChildren: 35, turnoverRate: 18 },
+  "Logistics / Warehousing": { pctChildren: 35, turnoverRate: 35 },
+  "Social Services / Nonprofit": { pctChildren: 40, turnoverRate: 22 },
+  "Other": { pctChildren: 33, turnoverRate: 20 },
+};
+
+const fmt = (n) =>
+  n == null || isNaN(n)
+    ? "—"
+    : "$" + Math.round(n).toLocaleString("en-US");
+
+const fmtPct = (n) =>
+  n == null || isNaN(n) ? "—" : Math.round(n) + "%";
+
+const InputField = ({ label, value, onChange, type = "number", prefix, suffix, min, max, step = 1, sublabel }) => (
+  <div style={{ marginBottom: "14px" }}>
+    <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#4a5568", marginBottom: "4px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+      {label}
+    </label>
+    {sublabel && <div style={{ fontSize: "11px", color: "#718096", marginBottom: "4px" }}>{sublabel}</div>}
+    <div style={{ display: "flex", alignItems: "center", background: "#fff", border: "1.5px solid #e2e8f0", borderRadius: "8px", overflow: "hidden", transition: "border-color 0.15s" }}>
+      {prefix && <span style={{ padding: "8px 10px", background: "#f7fafc", color: "#718096", fontSize: "14px", borderRight: "1.5px solid #e2e8f0" }}>{prefix}</span>}
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value === "" ? "" : parseFloat(e.target.value))}
+        min={min}
+        max={max}
+        step={step}
+        style={{ flex: 1, padding: "8px 12px", border: "none", outline: "none", fontSize: "14px", color: "#1a202c", background: "transparent" }}
+      />
+      {suffix && <span style={{ padding: "8px 10px", background: "#f7fafc", color: "#718096", fontSize: "14px", borderLeft: "1.5px solid #e2e8f0" }}>{suffix}</span>}
+    </div>
+  </div>
+);
+
+const ResultRow = ({ label, value, sublabel, highlight }) => (
+  <div style={{
+    display: "flex", justifyContent: "space-between", alignItems: "flex-start",
+    padding: "12px 16px",
+    background: highlight ? "#EBF3FA" : "#fff",
+    borderRadius: "8px",
+    marginBottom: "8px",
+    border: highlight ? "1.5px solid #90b8d8" : "1.5px solid #e2e8f0",
+  }}>
+    <div>
+      <div style={{ fontSize: "13px", color: "#2d3748", fontWeight: 500 }}>{label}</div>
+      {sublabel && <div style={{ fontSize: "11px", color: "#718096", marginTop: "2px" }}>{sublabel}</div>}
+    </div>
+    <div style={{ fontSize: "16px", fontWeight: 700, color: highlight ? "#1B3A5C" : "#2d3748", whiteSpace: "nowrap", marginLeft: "12px" }}>{value}</div>
+  </div>
+);
+
+const CostRow = ({ label, value, sublabel }) => (
+  <div style={{
+    display: "flex", justifyContent: "space-between", alignItems: "flex-start",
+    padding: "12px 16px", background: "#fff5f5", borderRadius: "8px", marginBottom: "8px",
+    border: "1.5px solid #fed7d7",
+  }}>
+    <div>
+      <div style={{ fontSize: "13px", color: "#2d3748", fontWeight: 500 }}>{label}</div>
+      {sublabel && <div style={{ fontSize: "11px", color: "#718096", marginTop: "2px" }}>{sublabel}</div>}
+    </div>
+    <div style={{ fontSize: "16px", fontWeight: 700, color: "#c53030", whiteSpace: "nowrap", marginLeft: "12px" }}>{value}</div>
+  </div>
+);
+
+export default function CCWROICalculator() {
+  // Core inputs
+  const [totalEmployees, setTotalEmployees] = useState(200);
+  const [industry, setIndustry] = useState("Manufacturing");
+  const [pctChildren, setPctChildren] = useState(35);
+  const [avgSalary, setAvgSalary] = useState(50000);
+  const [turnoverRate, setTurnoverRate] = useState(20);
+  const [monthlyContrib, setMonthlyContrib] = useState("");
+  const [taxEligible, setTaxEligible] = useState("yes");
+  const [techFeeOption, setTechFeeOption] = useState("employer"); // "employer" | "split" | "employee"
+
+  // Advanced overrides
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [replacementMult, setReplacementMult] = useState(1.5);
+  const [turnoverReduction, setTurnoverReduction] = useState(2);
+  const [absencesAvoided, setAbsencesAvoided] = useState(6);
+  const [productivityGain, setProductivityGain] = useState(3);
+  const [pctHiresInfluenced, setPctHiresInfluenced] = useState(10);
+  const [taxCreditRate, setTaxCreditRate] = useState(40);
+  const [avgTenure, setAvgTenure] = useState(3);
+
+  const handleIndustryChange = (ind) => {
+    setIndustry(ind);
+    const d = INDUSTRY_DEFAULTS[ind];
+    setPctChildren(d.pctChildren);
+    setTurnoverRate(d.turnoverRate);
+  };
+
+  const reset = () => {
+    setTotalEmployees(200);
+    handleIndustryChange("Manufacturing");
+    setAvgSalary(50000);
+    setMonthlyContrib("");
+    setTaxEligible("yes");
+    setTechFeeOption("employer");
+    setReplacementMult(1.5);
+    setTurnoverReduction(2);
+    setAbsencesAvoided(6);
+    setProductivityGain(3);
+    setPctHiresInfluenced(10);
+    setTaxCreditRate(45);
+    setAvgTenure(3);
+  };
+
+  // Cost flags — defined first so adequacy scaling can reference them
+  const hasCost = monthlyContrib !== "" && monthlyContrib !== null && !isNaN(parseFloat(monthlyContrib)) && parseFloat(monthlyContrib) > 0;
+
+  // Derived
+  const employeesWithChildren = Math.round((totalEmployees || 0) * (pctChildren || 0) / 100);
+  const dailySalaryCost = (avgSalary || 0) / 230;
+  const contrib = hasCost ? parseFloat(monthlyContrib) : null;
+
+  // Benefit adequacy threshold — below $100/mo, scale effectiveness proportionally.
+  // A $50/mo contribution is unlikely to fully secure reliable care on its own,
+  // so retention/absenteeism/productivity effects are dampened accordingly.
+  // Above $100/mo, full benchmark effectiveness applies.
+  const ADEQUACY_THRESHOLD = 250;
+  const adequacyScale = !hasCost ? 1 : Math.min(1, (contrib || 0) / ADEQUACY_THRESHOLD);
+  const isLowContrib = hasCost && contrib < ADEQUACY_THRESHOLD;
+
+  // Recruitment scaling — benefit size signals commitment to prospective hires.
+  // $0–100/mo → 5% of hires influenced; $250/mo → 10%; $500+/mo → 20%.
+  // Uses a smooth log curve anchored at these three points.
+  const effectiveRecruitPct = !hasCost
+    ? pctHiresInfluenced  // use manual override when no cost entered
+    : (() => {
+        const c = contrib || 0;
+        if (c <= 0) return 0;
+        // Logarithmic scale: ln(c/50) / ln(500/50) mapped to 0–20%
+        const raw = Math.log(Math.max(c, 1) / 50) / Math.log(10) * 10;
+        return Math.min(20, Math.max(0, raw));
+      })();
+
+  // 1. Turnover savings — scaled by adequacy
+  const turnoverSavings =
+    adequacyScale *
+    (totalEmployees || 0) *
+    ((pctChildren || 0) / 100) *
+    ((turnoverRate || 0) / 100) *
+    ((turnoverReduction || 0) / 100) *
+    ((avgSalary || 0) * (replacementMult || 1.5));
+
+  // 2. Absenteeism savings — scaled by adequacy
+  const absenteeismSavings =
+    adequacyScale *
+    employeesWithChildren * (absencesAvoided || 0) * dailySalaryCost;
+
+  // 3. Productivity value — scaled by adequacy
+  const productivityValue =
+    adequacyScale *
+    employeesWithChildren * (avgSalary || 0) * ((productivityGain || 0) / 100);
+
+  // 4. Recruitment savings — scaled by benefit size (separate curve, not adequacy threshold)
+  const annualHires = avgTenure > 0 ? employeesWithChildren / avgTenure : 0;
+  const recruitmentSavings =
+    annualHires * (effectiveRecruitPct / 100) * ((avgSalary || 0) / 24);
+
+  const totalBenefit = turnoverSavings + absenteeismSavings + productivityValue + recruitmentSavings;
+
+  // Cost
+  const TECH_FEE = 36; // per employee per month — CCW platform/technology fee
+  const grossBenefitCost = hasCost ? parseFloat(monthlyContrib) * employeesWithChildren * 12 : null;
+  const fullTechFeeAnnual = hasCost ? TECH_FEE * employeesWithChildren * 12 : null;
+  // Employer's share of tech fee depends on chosen option
+  const employerTechFeeShare = !hasCost ? null
+    : techFeeOption === "employer" ? fullTechFeeAnnual
+    : techFeeOption === "split"    ? fullTechFeeAnnual / 2
+    : 0; // "employee" — employer pays nothing
+  const employeeTechFeeShare = !hasCost ? null
+    : techFeeOption === "employee" ? fullTechFeeAnnual
+    : techFeeOption === "split"    ? fullTechFeeAnnual / 2
+    : 0;
+
+  // Gross cost = benefit contribution + employer's tech fee share
+  const grossCost = hasCost ? grossBenefitCost + employerTechFeeShare : null;
+
+  // Tax credits — IRC §45F applies to all qualified child care expenditures as a single credit:
+  // - Benefit contribution: at the employer's §45F rate (40–50%)
+  // - Employer's tech fee share: at 10%
+  // The combined credit is capped at $500K (40% rate) or $600K (50% rate)
+  const TECH_FEE_CREDIT_RATE = 0.10;
+  const creditRate = (taxCreditRate || 40) / 100;
+  const creditCap = taxCreditRate >= 50 ? 600000 : 500000;
+  const grossBenefitCredit = hasCost ? grossBenefitCost * creditRate : 0;
+  const grossTechFeeCredit = hasCost ? employerTechFeeShare * TECH_FEE_CREDIT_RATE : 0;
+  const totalGrossCredit = grossBenefitCredit + grossTechFeeCredit;
+  const totalAppliedCredit = Math.min(totalGrossCredit, creditCap);
+  const isCreditCapped = hasCost && taxEligible === "yes" && totalGrossCredit > creditCap;
+  const netCost = hasCost
+    ? taxEligible === "yes"
+      ? grossCost - totalAppliedCredit
+      : grossCost
+    : null;
+
+  const netROI = hasCost && netCost > 0
+    ? ((totalBenefit - netCost) / netCost) * 100
+    : null;
+
+  const roiColor = netROI == null ? "#2d3748" : netROI >= 0 ? "#1B3A5C" : "#c53030";
+
+  return (
+    <div style={{
+      fontFamily: "'Georgia', 'Times New Roman', serif",
+      background: "#F5F7FA",
+      minHeight: "100vh",
+      padding: "0",
+    }}>
+      {/* Header — white logo band */}
+      <div style={{ background: "#fff", padding: "16px 32px", borderBottom: "1px solid #e2e8f0", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
+        <img
+          src={CCW_LOGO}
+          alt="Child Care Works Missouri"
+          style={{ height: "72px", objectFit: "contain" }}
+        />
+        <button onClick={reset} style={{
+          background: "#fff", border: "1.5px solid #1B3A5C",
+          color: "#1B3A5C", borderRadius: "8px", padding: "8px 16px", cursor: "pointer",
+          fontSize: "12px", fontFamily: "sans-serif", fontWeight: 600, letterSpacing: "0.05em",
+          textTransform: "uppercase",
+        }}>
+          Reset to Defaults
+        </button>
+      </div>
+      {/* Navy title bar */}
+      <div style={{ background: "#1B3A5C", borderBottom: "4px solid #E8722A", padding: "14px 32px" }}>
+        <h1 style={{ margin: 0, fontSize: "18px", fontWeight: 700, color: "#fff", fontFamily: "sans-serif", letterSpacing: "-0.01em" }}>
+          Employer ROI Calculator
+        </h1>
+        <p style={{ margin: "3px 0 0", fontSize: "13px", color: "#a8c8e8", fontFamily: "sans-serif" }}>
+          Estimate the financial return of offering child care benefits to your workforce
+        </p>
+      </div>
+
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "0", maxWidth: "1100px", margin: "0 auto" }}>
+        {/* LEFT: Inputs */}
+        <div style={{ flex: "1 1 360px", padding: "28px 28px 24px", background: "#fff", borderRight: "1px solid #e2e8f0" }}>
+          <h2 style={{ fontSize: "13px", fontWeight: 700, color: "#1B3A5C", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "20px", marginTop: 0, fontFamily: "sans-serif" }}>
+            Your Workforce
+          </h2>
+
+          <InputField label="Total Employees" value={totalEmployees} onChange={setTotalEmployees} min={1} />
+
+          <div style={{ marginBottom: "14px" }}>
+            <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#4a5568", marginBottom: "4px", textTransform: "uppercase", letterSpacing: "0.05em", fontFamily: "sans-serif" }}>
+              Industry
+            </label>
+            <select
+              value={industry}
+              onChange={(e) => handleIndustryChange(e.target.value)}
+              style={{ width: "100%", padding: "9px 12px", border: "1.5px solid #e2e8f0", borderRadius: "8px", fontSize: "14px", color: "#1a202c", background: "#fff", outline: "none", fontFamily: "sans-serif" }}
+            >
+              {Object.keys(INDUSTRY_DEFAULTS).map((ind) => (
+                <option key={ind}>{ind}</option>
+              ))}
+            </select>
+          </div>
+
+          <InputField
+            label="% of Employees with Children Under 13"
+            sublabel={`Est. ${employeesWithChildren} employees — auto-set by industry, overridable`}
+            value={pctChildren}
+            onChange={setPctChildren}
+            suffix="%"
+            min={0}
+            max={100}
+          />
+
+          <InputField label="Average Annual Salary" value={avgSalary} onChange={setAvgSalary} prefix="$" min={0} step={1000} />
+
+          <InputField
+            label="Current Annual Turnover Rate"
+            sublabel="Industry benchmark pre-filled; adjust if known"
+            value={turnoverRate}
+            onChange={setTurnoverRate}
+            suffix="%"
+            min={0}
+            max={100}
+          />
+
+          <div style={{ borderTop: "1px solid #e2e8f0", marginTop: "20px", paddingTop: "20px" }}>
+            <h2 style={{ fontSize: "13px", fontWeight: 700, color: "#1B3A5C", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "16px", marginTop: 0, fontFamily: "sans-serif" }}>
+              CCW Cost (Optional)
+            </h2>
+            <InputField
+              label="Monthly Benefit Contribution per Employee"
+              sublabel="Your child care subsidy amount per employee (excludes the $36/mo technology fee below)."
+              value={monthlyContrib}
+              onChange={setMonthlyContrib}
+              prefix="$"
+              min={0}
+            />
+
+            <div style={{ marginBottom: "14px" }}>
+              <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#4a5568", marginBottom: "4px", textTransform: "uppercase", letterSpacing: "0.05em", fontFamily: "sans-serif" }}>
+                $36/mo Technology Fee — Who Pays?
+              </label>
+              <div style={{ fontSize: "11px", color: "#718096", marginBottom: "8px", fontFamily: "sans-serif" }}>
+                Covers the Child Care Works platform, enrollment support, and payment processing. Employer's share is eligible for a 10% tax credit (separate from §45F).
+              </div>
+              <div style={{ display: "flex", gap: "8px" }}>
+                {[
+                  { key: "employer", label: "Employer Pays" },
+                  { key: "split",    label: "Split 50/50" },
+                  { key: "employee", label: "Employee Pays" },
+                ].map(({ key, label }) => (
+                  <button
+                    key={key}
+                    onClick={() => setTechFeeOption(key)}
+                    style={{
+                      flex: 1, padding: "8px 4px", borderRadius: "8px", cursor: "pointer",
+                      fontSize: "11px", fontFamily: "sans-serif", fontWeight: 600,
+                      border: techFeeOption === key ? "2px solid #1B3A5C" : "1.5px solid #e2e8f0",
+                      background: techFeeOption === key ? "#EBF3FA" : "#fff",
+                      color: techFeeOption === key ? "#1B3A5C" : "#718096",
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ marginBottom: "14px" }}>
+              <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#4a5568", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.05em", fontFamily: "sans-serif" }}>
+                Federal Tax Credit Eligible? (IRC §45F)
+              </label>
+              <div style={{ display: "flex", gap: "8px" }}>
+                {["yes", "no", "unsure"].map((opt) => (
+                  <button
+                    key={opt}
+                    onClick={() => setTaxEligible(opt)}
+                    style={{
+                      flex: 1, padding: "8px 4px", borderRadius: "8px", cursor: "pointer",
+                      fontSize: "12px", fontFamily: "sans-serif", fontWeight: 600,
+                      border: taxEligible === opt ? "2px solid #1B3A5C" : "1.5px solid #e2e8f0",
+                      background: taxEligible === opt ? "#EBF3FA" : "#fff",
+                      color: taxEligible === opt ? "#1B3A5C" : "#718096",
+                      textTransform: "capitalize",
+                    }}
+                  >
+                    {opt === "unsure" ? "Not Sure" : opt.charAt(0).toUpperCase() + opt.slice(1)}
+                  </button>
+                ))}
+              </div>
+              {taxEligible === "yes" && (
+                <div style={{ marginTop: "8px", padding: "10px 12px", background: "#EBF3FA", borderRadius: "6px", fontSize: "11px", color: "#1B3A5C", fontFamily: "sans-serif", lineHeight: 1.6 }}>
+                  <div style={{ fontWeight: 700, marginBottom: "6px" }}>Which rate applies to you?</div>
+                  <div style={{ marginBottom: "6px" }}>
+                    <strong>50% credit (up to $600K/yr)</strong> — Businesses with average annual gross receipts of <strong>$31 million or less</strong>
+                  </div>
+                  <div style={{ marginBottom: "8px" }}>
+                    <strong>40% credit (up to $500K/yr)</strong> — Businesses with average annual gross receipts <strong>over $31 million</strong>
+                  </div>
+                  <div style={{ borderTop: "1px solid #90b8d8", paddingTop: "8px" }}>
+                    <label style={{ fontWeight: 700, display: "block", marginBottom: "5px" }}>Select your rate:</label>
+                    <div style={{ display: "flex", gap: "8px" }}>
+                      {[{ rate: 50, label: "50% — Under $31M" }, { rate: 40, label: "40% — Over $31M" }].map(({ rate, label }) => (
+                        <button
+                          key={rate}
+                          onClick={() => setTaxCreditRate(rate)}
+                          style={{
+                            flex: 1, padding: "7px 4px", borderRadius: "6px", cursor: "pointer",
+                            fontSize: "11px", fontFamily: "sans-serif", fontWeight: 600,
+                            border: taxCreditRate === rate ? "2px solid #1B3A5C" : "1.5px solid #90b8d8",
+                            background: taxCreditRate === rate ? "#1B3A5C" : "#fff",
+                            color: taxCreditRate === rate ? "#fff" : "#1B3A5C",
+                          }}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={{ marginTop: "8px", color: "#4A6FA5", fontSize: "10px" }}>Verify eligibility with a tax advisor. Pass-through entities (S-Corps, partnerships) should also confirm AMT implications.</div>
+                </div>
+              )}
+              {taxEligible === "unsure" && (
+                <div style={{ marginTop: "8px", padding: "8px 12px", background: "#fffbf0", borderRadius: "6px", fontSize: "11px", color: "#b7791f", fontFamily: "sans-serif" }}>
+                  For-profit C-Corporations are generally eligible. Pass-through entities (S-Corps, partnerships) should verify with a tax advisor re: AMT limitations.
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Advanced */}
+          <div style={{ borderTop: "1px solid #e2e8f0", marginTop: "20px", paddingTop: "16px" }}>
+            <button
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              style={{
+                background: "none", border: "none", cursor: "pointer", color: "#4a5568",
+                fontSize: "12px", fontFamily: "sans-serif", fontWeight: 600,
+                textTransform: "uppercase", letterSpacing: "0.08em", display: "flex",
+                alignItems: "center", gap: "6px", padding: 0,
+              }}
+            >
+              <span style={{ fontSize: "16px", lineHeight: 1 }}>{showAdvanced ? "▾" : "▸"}</span>
+              Advanced Assumptions
+            </button>
+            {showAdvanced && (
+              <div style={{ marginTop: "16px" }}>
+                <InputField label="Replacement Cost Multiplier" sublabel="× of annual salary (default: 1.5×)" value={replacementMult} onChange={setReplacementMult} suffix="×" min={0.5} max={3} step={0.1} />
+                <InputField label="Turnover Reduction from CCW" sublabel="% of eligible employees retained additionally (default: 2%)" value={turnoverReduction} onChange={setTurnoverReduction} suffix="%" min={0} max={20} step={0.5} />
+                <InputField label="Absences Avoided per Employee/Year" sublabel="Days avoided with reliable child care (default: 6)" value={absencesAvoided} onChange={setAbsencesAvoided} suffix="days" min={0} max={20} />
+                <InputField label="Productivity Gain" sublabel="% productivity improvement (default: 3%)" value={productivityGain} onChange={setProductivityGain} suffix="%" min={0} max={20} step={0.5} />
+                <InputField label="% of Hires Influenced by Benefit" sublabel="Recruitment advantage (default: 10%)" value={pctHiresInfluenced} onChange={setPctHiresInfluenced} suffix="%" min={0} max={100} />
+                <InputField label="Average Employee Tenure" sublabel="Years (used for recruitment calc, default: 3)" value={avgTenure} onChange={setAvgTenure} suffix="yrs" min={1} max={20} />
+                {taxEligible === "yes" && (
+                  <InputField label="Tax Credit Rate" sublabel="50% for businesses with avg gross receipts ≤$31M; 40% for larger businesses (IRC §45F)" value={taxCreditRate} onChange={setTaxCreditRate} suffix="%" min={40} max={50} />
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* RIGHT: Results */}
+        <div style={{ flex: "1 1 340px", padding: "28px 28px 24px", background: "#f8faff" }}>
+          <h2 style={{ fontSize: "13px", fontWeight: 700, color: "#1B3A5C", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "20px", marginTop: 0, fontFamily: "sans-serif" }}>
+            Estimated Annual Value
+          </h2>
+
+          {isLowContrib && (
+            <div style={{ padding: "10px 14px", background: "#fffbf0", border: "1.5px solid #E8722A", borderRadius: "8px", fontSize: "12px", color: "#7B3A10", fontFamily: "sans-serif", marginBottom: "14px", lineHeight: 1.5 }}>
+              ⚠️ <strong>Low contribution notice:</strong> At ${contrib}/mo, the benefit may not be sufficient to fully secure reliable child care. Turnover, absenteeism, and productivity estimates are scaled to {Math.round(adequacyScale * 100)}% of full benchmark values. Consider $250+/mo for full impact.
+            </div>
+          )}
+
+          <ResultRow
+            label="Reduced Turnover"
+            sublabel={`${employeesWithChildren} employees w/ children × ${turnoverRate}% turnover × ${turnoverReduction}% retention lift × ${replacementMult}× salary${isLowContrib ? ` × ${Math.round(adequacyScale*100)}% adequacy` : ""}`}
+            value={fmt(turnoverSavings)}
+          />
+          <ResultRow
+            label="Reduced Absenteeism"
+            sublabel={`${employeesWithChildren} employees × ${absencesAvoided} fewer absences/yr × daily rate${isLowContrib ? ` × ${Math.round(adequacyScale*100)}% adequacy` : ""}`}
+            value={fmt(absenteeismSavings)}
+          />
+          <ResultRow
+            label="Productivity Gains"
+            sublabel={`${employeesWithChildren} employees × ${productivityGain}% productivity improvement${isLowContrib ? ` × ${Math.round(adequacyScale*100)}% adequacy` : ""}`}
+            value={fmt(productivityValue)}
+          />
+          <ResultRow
+            label="Recruitment Advantage"
+            sublabel={hasCost ? `${effectiveRecruitPct.toFixed(1)}% of annual hires influenced (scaled to $${contrib}/mo benefit level)` : `${pctHiresInfluenced}% of annual hires influenced by benefit`}
+            value={fmt(recruitmentSavings)}
+          />
+
+          {/* Total */}
+          <div style={{
+            display: "flex", justifyContent: "space-between", alignItems: "center",
+            padding: "14px 16px", background: "#1B3A5C", borderRadius: "10px",
+            marginTop: "4px", marginBottom: "16px",
+          }}>
+            <div style={{ color: "#a8c8e8", fontSize: "13px", fontWeight: 600, fontFamily: "sans-serif", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              Total Annual Benefit
+            </div>
+            <div style={{ color: "#fff", fontSize: "20px", fontWeight: 700 }}>{fmt(totalBenefit)}</div>
+          </div>
+
+          {/* Cost section */}
+          {hasCost && (
+            <>
+              <h2 style={{ fontSize: "13px", fontWeight: 700, color: "#c53030", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "12px", fontFamily: "sans-serif" }}>
+                Estimated Annual Cost
+              </h2>
+              <CostRow
+                label="Child Care Benefit Contribution"
+                sublabel={`$${parseFloat(monthlyContrib).toLocaleString()}/mo × ${employeesWithChildren} employees × 12 months`}
+                value={fmt(grossBenefitCost)}
+              />
+              <CostRow
+                label={`Technology Fee — Employer Share (${techFeeOption === "employer" ? "100%" : techFeeOption === "split" ? "50%" : "0%"} of $36/mo)`}
+                sublabel={
+                  techFeeOption === "employer" ? "Employer covers full $36/mo technology fee per employee"
+                  : techFeeOption === "split"  ? "Employer and employee each cover $18/mo of the technology fee"
+                  : "Employee covers the full $36/mo technology fee"
+                }
+                value={fmt(employerTechFeeShare)}
+              />
+              <CostRow
+                label="Total Gross Cost to Employer"
+                sublabel="Benefit contribution + employer's technology fee share"
+                value={fmt(grossCost)}
+              />
+              {taxEligible === "yes" && (
+                <>
+                  {isCreditCapped && (
+                    <div style={{ padding: "10px 14px", background: "#fffbf0", border: "1.5px solid #E8722A", borderRadius: "8px", fontSize: "12px", color: "#7B3A10", fontFamily: "sans-serif", marginBottom: "8px", lineHeight: 1.5 }}>
+                      ⚠️ <strong>§45F credit cap reached:</strong> The combined annual credit (benefit contribution at {taxCreditRate}% + tech fee at 10%) would be {fmt(totalGrossCredit)}, but the §45F cap limits this to {fmt(creditCap)}. Net cost reflects the capped credit.
+                    </div>
+                  )}
+                  <CostRow
+                    label="Net Cost After Tax Credits"
+                    sublabel={`Combined §45F credit: ${taxCreditRate}% on benefit contribution + 10% on tech fee (employer share)${isCreditCapped ? ` — capped at ${fmt(creditCap)}` : ` — total credit ${fmt(totalAppliedCredit)}`} · Verify eligibility with tax advisor`}
+                    value={fmt(netCost)}
+                  />
+                </>
+              )}
+
+              {/* ROI */}
+              <div style={{
+                padding: "20px", background: "#fff",
+                borderRadius: "12px", border: `2px solid ${roiColor === "#1B3A5C" ? "#90b8d8" : "#fed7d7"}`,
+                marginTop: "8px", marginBottom: "16px", textAlign: "center",
+              }}>
+                <div style={{ fontFamily: "sans-serif", fontSize: "11px", fontWeight: 700, color: "#718096", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "6px" }}>
+                  Net ROI
+                </div>
+                <div style={{ fontSize: "42px", fontWeight: 700, color: roiColor, lineHeight: 1 }}>
+                  {fmtPct(netROI)}
+                </div>
+                <div style={{ fontSize: "12px", color: "#718096", marginTop: "6px", fontFamily: "sans-serif" }}>
+                  {netROI != null && netROI >= 0
+                    ? `For every $1 invested, estimated return of $${(totalBenefit / (netCost || 1)).toFixed(2)}`
+                    : "Adjust inputs to see positive ROI"}
+                </div>
+              </div>
+            </>
+          )}
+
+          {!hasCost && (
+            <div style={{ padding: "14px 16px", background: "#fffbf0", border: "1.5px solid #f6e05e", borderRadius: "8px", fontSize: "12px", color: "#744210", fontFamily: "sans-serif", marginBottom: "16px" }}>
+              Enter your monthly CCW contribution above to calculate net ROI.
+            </div>
+          )}
+
+          {/* Benchmark anchors */}
+          <div style={{ background: "#EBF3FA", border: "1.5px solid #90b8d8", borderRadius: "10px", padding: "14px 16px", marginBottom: "16px" }}>
+            <div style={{ fontSize: "11px", fontWeight: 700, color: "#1B3A5C", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "10px", fontFamily: "sans-serif" }}>
+              Research Benchmarks
+            </div>
+            <div style={{ fontSize: "12px", color: "#1B3A5C", fontFamily: "sans-serif", lineHeight: 1.6 }}>
+              <div style={{ marginBottom: "6px" }}>📊 BCG & Moms First studied 5 companies and found ROI of <strong>90%–425%</strong></div>
+              <div style={{ marginBottom: "6px" }}>💡 Retaining just <strong>1% more</strong> eligible employees can cover the full cost of the benefit for all</div>
+              <div>🏭 Mazda Toyota saw a <strong>20% drop in female attrition</strong> after launching a child care stipend via TOOTRiS</div>
+            </div>
+          </div>
+
+          {/* Sources + disclaimer */}
+          <div style={{ fontSize: "10px", color: "#a0aec0", fontFamily: "sans-serif", lineHeight: 1.6, borderTop: "1px solid #e2e8f0", paddingTop: "12px" }}>
+            <strong>Sources:</strong> BCG &amp; Moms First, "The Employee Benefit That Pays for Itself" (2024); NYC EDC, "Toward a Working Future: A Child Care Toolkit for NYC Employers" (2023); NPR, "An Alabama Manufacturer Shows How to Retain Working Moms: Child Care" (2024).
+            <br /><br />
+            <strong>Disclaimer:</strong> These are estimates based on published research benchmarks. Total cost includes the employer's child care benefit contribution plus the $36/mo per-employee Child Care Works technology and administration fee. Turnover, absenteeism, and productivity benefits are scaled proportionally for contributions below $250/mo, reflecting that smaller subsidies may not fully secure reliable care. Recruitment advantage scales with benefit size using a logarithmic curve anchored at $100/mo (5%), $250/mo (10%), and $500/mo (20%). Actual results will vary based on your workforce, benefit design, and utilization. Consult a tax advisor regarding IRC §45F eligibility and AMT implications for pass-through entities.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
