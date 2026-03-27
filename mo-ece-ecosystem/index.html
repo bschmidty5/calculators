@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Early Childhood Advocacy Ecosystem — Missouri</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; margin: 0; background: #f5f4f0; color: #2c2c2a; }
+  header { background: #1a3a5c; color: white; padding: 20px 32px 16px; }
+  header h1 { margin: 0 0 4px; font-size: 22px; font-weight: 600; }
+  header p { margin: 0; font-size: 13px; opacity: 0.75; }
+  main { padding: 20px 24px; max-width: 1100px; margin: 0 auto; }
+  #controls { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; align-items: center; }
+  .filter-btn {
+    padding: 5px 12px; border-radius: 20px; border: 1px solid #c8c6bc;
+    background: #fff; color: #555; cursor: pointer; font-size: 12px; transition: all .15s;
+    font-family: Arial, sans-serif;
+  }
+  .filter-btn.active { background: #1a3a5c; color: #fff; border-color: #1a3a5c; }
+  .filter-btn:hover:not(.active) { background: #eee; }
+  #search {
+    padding: 5px 12px; border-radius: 20px; border: 1px solid #c8c6bc;
+    font-size: 12px; width: 180px; outline: none; font-family: Arial, sans-serif;
+  }
+  #search:focus { border-color: #1a3a5c; }
+  #legend { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; font-size: 12px; color: #555; }
+  .leg { display: flex; align-items: center; gap: 5px; }
+  .leg-dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
+  #canvas-wrap { background: #fff; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; }
+  canvas { display: block; width: 100%; cursor: grab; }
+  canvas:active { cursor: grabbing; }
+  #tooltip {
+    position: fixed; pointer-events: none; display: none;
+    background: #fff; border: 1px solid #ddd; border-radius: 8px;
+    padding: 10px 14px; font-size: 12px; max-width: 260px; line-height: 1.6;
+    color: #2c2c2a; z-index: 9999; box-shadow: 0 2px 12px rgba(0,0,0,.12);
+  }
+  #info-panel {
+    display: none; background: #fff; border: 1px solid #ddd; border-radius: 8px;
+    padding: 14px 16px; margin-top: 12px; font-size: 13px; color: #555;
+  }
+  #info-panel h3 { margin: 0 0 8px; font-size: 15px; font-weight: 600; color: #1a3a5c; }
+  .tag {
+    display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px;
+    margin: 2px; background: #f0efe8; color: #555; border: 1px solid #ddd;
+  }
+  .hint { font-size: 12px; color: #888; margin-top: 6px; }
+  footer { text-align: center; font-size: 11px; color: #999; padding: 16px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Early Childhood Advocacy Ecosystem — Missouri</h1>
+  <p>48 organizations &bull; 100+ connections &bull; Click any node to explore &bull; Scroll to zoom &bull; Drag to pan</p>
+</header>
+<main>
+  <div id="controls">
+    <strong style="font-size:12px;color:#555">Filter:</strong>
+    <button class="filter-btn active" data-type="all">All</button>
+    <button class="filter-btn" data-type="Nonprofit Organization">Nonprofit</button>
+    <button class="filter-btn" data-type="Private Foundation">Foundation</button>
+    <button class="filter-btn" data-type="Employer Association">Chamber/Business</button>
+    <button class="filter-btn" data-type="Quasi-Governmental Entity">Quasi-Gov</button>
+    <button class="filter-btn" data-type="Social Welfare Organization">Social Welfare</button>
+    <button class="filter-btn" data-type="Economic Development Organization">Econ Dev</button>
+    <input id="search" placeholder="Search organization…" oninput="filterSearch(this.value)">
+  </div>
+  <div id="legend"></div>
+  <div id="canvas-wrap"><canvas id="canvas"></canvas></div>
+  <p class="hint">Node size = number of connections. Click a node to see its details and highlight its connections.</p>
+  <div id="tooltip"></div>
+  <div id="info-panel">
+    <h3 id="ip-name"></h3>
+    <div id="ip-body"></div>
+  </div>
+</main>
+<footer>Missouri Early Childhood Advocacy Ecosystem Map &bull; 2025</footer>
+
+<script>
+const nodes_data = [
+  {id:"Aligned",type:"Nonprofit Organization",focus:"Child Care | Pre-K",geo:"Statewide",tags:"Research | Lobbying | Communications | Grasstops"},
+  {id:"Berges Family Foundation",type:"Private Foundation",focus:"Child Care | Pre-K",geo:"St. Louis",tags:"Funder | Advocacy"},
+  {id:"Child Care Aware of Missouri",type:"Nonprofit Organization",focus:"Child Care",geo:"Statewide",tags:"Research | Lobbying | Communications | Systems Support"},
+  {id:"Children's Trust Fund",type:"Quasi-Governmental Entity",focus:"Child Care | Home Visiting",geo:"Statewide",tags:"Lobbying | Program Administration | Funder"},
+  {id:"City of Houston",type:"Economic Development Organization",focus:"Child Care",geo:"Texas County",tags:"Child Care Works | Grasstops"},
+  {id:"Community Action Partnership of Greater St. Joseph",type:"Nonprofit Organization",focus:"Child Care | Home Visiting | Pre-K",geo:"Buchanan County",tags:"Grassroots | Advocacy"},
+  {id:"Community Action Partnership of Northeast Missouri",type:"Nonprofit Organization",focus:"Child Care | Pre-K | Home Visiting",geo:"Adair County",tags:"Child Care Works"},
+  {id:"Community Foundation of the Ozarks",type:"Community Foundation",focus:"Child Care | Home Visiting | Pre-K",geo:"Southwest Missouri",tags:"Funder | Child Care Works"},
+  {id:"Community Partnership of Southeast Missouri",type:"Nonprofit Organization",focus:"Child Care",geo:"Cape Girardeau County",tags:"Systems Support | Grassroots | Community Planning"},
+  {id:"Community Partnership of the Ozarks",type:"Nonprofit Organization",focus:"Child Care | Home Visiting | Pre-K",geo:"Greene County",tags:"Lobbying | Systems Support | Child Care Works"},
+  {id:"Durwood Foundation",type:"Private Foundation",focus:"Child Care | Pre-K",geo:"Kansas City",tags:"Funder | Advocacy"},
+  {id:"East Missouri Action Agency",type:"Nonprofit Organization",focus:"Child Care | Pre-K | Home Visiting",geo:"Perry County",tags:"Child Care Works"},
+  {id:"Gateway Early Childhood Alliance",type:"Nonprofit Organization",focus:"Child Care | Pre-K",geo:"St. Louis",tags:"Lobbying | Grassroots | Systems Support | Child Care Works"},
+  {id:"Hall Family Foundation",type:"Private Foundation",focus:"Child Care | Pre-K | Home Visiting",geo:"Kansas City",tags:"Funder | Advocacy"},
+  {id:"Hannibal Regional Economic Development Inc.",type:"Economic Development Organization",focus:"Child Care",geo:"Marion County",tags:"Grasstops | Community Planning"},
+  {id:"Heart of Missouri United Way",type:"Nonprofit Organization",focus:"Child Care | Home Visiting | Pre-K",geo:"Boone County",tags:"Child Care Works | Community Planning"},
+  {id:"HWS Charitable Foundation",type:"Private Foundation",focus:"Child Care | Pre-K | Home Visiting",geo:"Statewide",tags:"Funder | Advocacy | Community Planning"},
+  {id:"Jefferson City Chamber of Commerce",type:"Employer Association",focus:"Child Care",geo:"Cole County",tags:"Child Care Works | Grasstops"},
+  {id:"Kansas City Chamber of Commerce",type:"Employer Association",focus:"Child Care | Pre-K",geo:"Kansas City",tags:"Lobbying | Grasstops | Communications"},
+  {id:"Kansas City Civic Council",type:"Social Welfare Organization",focus:"Child Care | Pre-K | Home Visiting",geo:"Kansas City",tags:"Lobbying | Grasstops | Communications | Research"},
+  {id:"Kauffman Foundation",type:"Private Foundation",focus:"Child Care",geo:"Kansas City",tags:"Funder | Child Care Works"},
+  {id:"Kids Win Missouri",type:"Nonprofit Organization",focus:"Child Care | Home Visiting | Pre-K",geo:"Statewide",tags:"Research | Lobbying | Grassroots | Grasstops | Communications | Systems Support | Funder"},
+  {id:"Kirksville Regional Economic Development Inc.",type:"Economic Development Organization",focus:"Child Care",geo:"Adair County",tags:"Child Care Works | Community Planning"},
+  {id:"McDonnell Foundation",type:"Private Foundation",focus:"Child Care",geo:"Statewide",tags:"Funder | Community Planning"},
+  {id:"Mid-America Regional Council",type:"Quasi-Governmental Entity",focus:"Child Care | Home Visiting | Pre-K",geo:"Kansas City",tags:"Research | Systems Support | Child Care Works | Community Planning"},
+  {id:"Missouri Action for Kids",type:"Social Welfare Organization",focus:"Child Care | Pre-K | Home Visiting",geo:"Statewide",tags:"Lobbying | Grassroots | Ballot Initiatives"},
+  {id:"Missouri Budget Project",type:"Nonprofit Organization",focus:"Child Care | Pre-K | Home Visiting",geo:"Statewide",tags:"Lobbying | Grasstops | Research | Communications"},
+  {id:"Missouri Chamber of Commerce",type:"Employer Association",focus:"Child Care",geo:"Statewide",tags:"Research | Lobbying | Grassroots | Communications"},
+  {id:"Missouri Foundation for Health",type:"Private Foundation",focus:"Child Care | Pre-K | Home Visiting",geo:"Statewide",tags:"Funder | Community Planning"},
+  {id:"Missouri Parents as Teachers Association",type:"Nonprofit Organization",focus:"Child Care | Pre-K | Home Visiting",geo:"Statewide",tags:"Child Care Works | Grassroots"},
+  {id:"New Growth Inc.",type:"Nonprofit Organization",focus:"Child Care",geo:"West Central Missouri",tags:"Child Care Works | Systems Support | Program Administration"},
+  {id:"Parent Leadership Training Institute- Kansas City",type:"Nonprofit Organization",focus:"Child Care | Pre-K | Home Visiting",geo:"Kansas City",tags:"Grassroots | Advocacy"},
+  {id:"Patterson Foundation",type:"Private Foundation",focus:"Child Care",geo:"West Central Missouri",tags:"Funder | Community Planning | Child Care Works"},
+  {id:"Perry County Economic Development Authority",type:"Economic Development Organization",focus:"Child Care",geo:"Perry County",tags:"Grasstops | Child Care Works"},
+  {id:"Silver Dollar City Foundation",type:"Private Foundation",focus:"Child Care",geo:"Stone and Taney Counties",tags:"Funder | Community Planning"},
+  {id:"Springfield Chamber of Commerce",type:"Employer Association",focus:"Child Care",geo:"Greene County",tags:"Lobbying | Grasstops | Communications"},
+  {id:"St. Francois Community Partnership",type:"Nonprofit Organization",focus:"Child Care",geo:"St. Francois County",tags:"Child Care Works | Community Planning"},
+  {id:"Taney County Partnership",type:"Economic Development Organization",focus:"Child Care",geo:"Taney County",tags:"Child Care Works | Community Planning"},
+  {id:"The Community Partnership",type:"Nonprofit Organization",focus:"Child Care | Home Visiting",geo:"Phelps County",tags:"Systems Support | Child Care Works | Community Planning"},
+  {id:"The Neighbor Company",type:"Private Foundation",focus:"Child Care",geo:"Stone and Taney Counties",tags:"Funder | Community Planning"},
+  {id:"TKD Foundation",type:"Private Foundation",focus:"Child Care",geo:"Phelps County",tags:"Funder | Child Care Works"},
+  {id:"United Way of Greater St. Joseph",type:"Nonprofit Organization",focus:"Child Care | Pre-K",geo:"Buchanan County",tags:"Systems Support | Community Planning"},
+  {id:"United Way of Southeast Missouri",type:"Nonprofit Organization",focus:"Child Care",geo:"Cape Girardeau County",tags:"Child Care Works"},
+  {id:"United WE",type:"Nonprofit Organization",focus:"Child Care",geo:"Statewide",tags:"Lobbying | Grasstops | Research | Communications"},
+  {id:"Upward Momentum",type:"Funder Collaborative",focus:"Child Care",geo:"Statewide",tags:"Funder | Community Planning | Child Care Works"},
+  {id:"Veterans United",type:"Private Foundation",focus:"Child Care",geo:"Boone County",tags:"Funder"},
+  {id:"WEPOWER",type:"Nonprofit Organization",focus:"Child Care | Pre-K",geo:"St. Louis",tags:"Research | Lobbying | Communications | Grasstops | Grassroots"},
+  {id:"William Guitar Little Foundation",type:"Private Foundation",focus:"Child Care",geo:"Boone County",tags:"Funder"}
+];
+
+const raw_edges = [
+  ["Aligned","Kids Win Missouri"],["Aligned","Kansas City Chamber of Commerce"],
+  ["Berges Family Foundation","Kids Win Missouri"],
+  ["Child Care Aware of Missouri","Kids Win Missouri"],["Child Care Aware of Missouri","Community Partnership of the Ozarks"],
+  ["Children's Trust Fund","Kids Win Missouri"],
+  ["City of Houston","Kids Win Missouri"],
+  ["Community Action Partnership of Greater St. Joseph","United Way of Greater St. Joseph"],["Community Action Partnership of Greater St. Joseph","Kids Win Missouri"],["Community Action Partnership of Greater St. Joseph","Missouri Action for Kids"],
+  ["Community Action Partnership of Northeast Missouri","Kirksville Regional Economic Development Inc."],["Community Action Partnership of Northeast Missouri","Kids Win Missouri"],["Community Action Partnership of Northeast Missouri","Missouri Action for Kids"],
+  ["Community Foundation of the Ozarks","Community Partnership of the Ozarks"],
+  ["Community Partnership of Southeast Missouri","Kids Win Missouri"],["Community Partnership of Southeast Missouri","United Way of Southeast Missouri"],["Community Partnership of Southeast Missouri","Missouri Action for Kids"],
+  ["Community Partnership of the Ozarks","Community Foundation of the Ozarks"],["Community Partnership of the Ozarks","Springfield Chamber of Commerce"],["Community Partnership of the Ozarks","Kids Win Missouri"],
+  ["Durwood Foundation","Kids Win Missouri"],
+  ["East Missouri Action Agency","Perry County Economic Development Authority"],["East Missouri Action Agency","Kids Win Missouri"],
+  ["Gateway Early Childhood Alliance","WEPOWER"],["Gateway Early Childhood Alliance","McDonnell Foundation"],["Gateway Early Childhood Alliance","Kids Win Missouri"],["Gateway Early Childhood Alliance","Missouri Foundation for Health"],
+  ["Hall Family Foundation","Kids Win Missouri"],
+  ["Hannibal Regional Economic Development Inc.","Kids Win Missouri"],
+  ["Heart of Missouri United Way","Veterans United"],["Heart of Missouri United Way","William Guitar Little Foundation"],["Heart of Missouri United Way","Kids Win Missouri"],
+  ["HWS Charitable Foundation","Kids Win Missouri"],
+  ["Jefferson City Chamber of Commerce","Missouri Parents as Teachers Association"],["Jefferson City Chamber of Commerce","Missouri Chamber of Commerce"],
+  ["Kansas City Chamber of Commerce","Missouri Chamber of Commerce"],["Kansas City Chamber of Commerce","Kansas City Civic Council"],["Kansas City Chamber of Commerce","Mid-America Regional Council"],
+  ["Kansas City Civic Council","Kansas City Chamber of Commerce"],
+  ["Kauffman Foundation","Kids Win Missouri"],
+  ["Kids Win Missouri","Child Care Aware of Missouri"],["Kids Win Missouri","Aligned"],["Kids Win Missouri","United WE"],["Kids Win Missouri","Mid-America Regional Council"],["Kids Win Missouri","WEPOWER"],["Kids Win Missouri","Gateway Early Childhood Alliance"],["Kids Win Missouri","Community Partnership of the Ozarks"],["Kids Win Missouri","The Community Partnership"],["Kids Win Missouri","United Way of Southeast Missouri"],["Kids Win Missouri","Community Partnership of Southeast Missouri"],["Kids Win Missouri","St. Francois Community Partnership"],["Kids Win Missouri","Children's Trust Fund"],["Kids Win Missouri","Community Action Partnership of Greater St. Joseph"],["Kids Win Missouri","United Way of Greater St. Joseph"],["Kids Win Missouri","Missouri Chamber of Commerce"],["Kids Win Missouri","Springfield Chamber of Commerce"],["Kids Win Missouri","Kansas City Chamber of Commerce"],["Kids Win Missouri","Hannibal Regional Economic Development Inc."],["Kids Win Missouri","Kirksville Regional Economic Development Inc."],["Kids Win Missouri","Community Action Partnership of Northeast Missouri"],["Kids Win Missouri","Heart of Missouri United Way"],["Kids Win Missouri","Jefferson City Chamber of Commerce"],["Kids Win Missouri","Missouri Parents as Teachers Association"],["Kids Win Missouri","City of Houston"],["Kids Win Missouri","Taney County Partnership"],["Kids Win Missouri","Perry County Economic Development Authority"],["Kids Win Missouri","East Missouri Action Agency"],["Kids Win Missouri","New Growth Inc."],["Kids Win Missouri","Missouri Foundation for Health"],["Kids Win Missouri","Hall Family Foundation"],["Kids Win Missouri","McDonnell Foundation"],["Kids Win Missouri","Upward Momentum"],["Kids Win Missouri","HWS Charitable Foundation"],["Kids Win Missouri","Kauffman Foundation"],["Kids Win Missouri","Silver Dollar City Foundation"],["Kids Win Missouri","The Neighbor Company"],["Kids Win Missouri","Berges Family Foundation"],["Kids Win Missouri","Durwood Foundation"],["Kids Win Missouri","Patterson Foundation"],["Kids Win Missouri","Parent Leadership Training Institute- Kansas City"],
+  ["Kirksville Regional Economic Development Inc.","Community Action Partnership of Northeast Missouri"],
+  ["McDonnell Foundation","Kids Win Missouri"],["McDonnell Foundation","Upward Momentum"],["McDonnell Foundation","Gateway Early Childhood Alliance"],
+  ["Mid-America Regional Council","Kids Win Missouri"],["Mid-America Regional Council","Parent Leadership Training Institute- Kansas City"],
+  ["Missouri Action for Kids","Parent Leadership Training Institute- Kansas City"],["Missouri Action for Kids","Perry County Economic Development Authority"],["Missouri Action for Kids","Community Partnership of the Ozarks"],["Missouri Action for Kids","Community Action Partnership of Greater St. Joseph"],["Missouri Action for Kids","Community Action Partnership of Northeast Missouri"],["Missouri Action for Kids","Missouri Parents as Teachers Association"],["Missouri Action for Kids","New Growth Inc."],["Missouri Action for Kids","St. Francois Community Partnership"],["Missouri Action for Kids","Community Partnership of Southeast Missouri"],
+  ["Missouri Budget Project","Kids Win Missouri"],["Missouri Budget Project","WEPOWER"],
+  ["Missouri Chamber of Commerce","Springfield Chamber of Commerce"],["Missouri Chamber of Commerce","Kansas City Chamber of Commerce"],["Missouri Chamber of Commerce","Jefferson City Chamber of Commerce"],["Missouri Chamber of Commerce","Taney County Partnership"],
+  ["Missouri Foundation for Health","Kids Win Missouri"],["Missouri Foundation for Health","Upward Momentum"],["Missouri Foundation for Health","Gateway Early Childhood Alliance"],
+  ["Missouri Parents as Teachers Association","Kids Win Missouri"],["Missouri Parents as Teachers Association","Jefferson City Chamber of Commerce"],["Missouri Parents as Teachers Association","Missouri Action for Kids"],
+  ["New Growth Inc.","Patterson Foundation"],["New Growth Inc.","Kids Win Missouri"],["New Growth Inc.","Missouri Action for Kids"],
+  ["Parent Leadership Training Institute- Kansas City","Missouri Action for Kids"],["Parent Leadership Training Institute- Kansas City","Mid-America Regional Council"],["Parent Leadership Training Institute- Kansas City","Kids Win Missouri"],
+  ["Patterson Foundation","Kids Win Missouri"],["Patterson Foundation","New Growth Inc."],
+  ["Perry County Economic Development Authority","East Missouri Action Agency"],["Perry County Economic Development Authority","Kids Win Missouri"],["Perry County Economic Development Authority","Missouri Action for Kids"],
+  ["Silver Dollar City Foundation","Kids Win Missouri"],["Silver Dollar City Foundation","Taney County Partnership"],["Silver Dollar City Foundation","The Neighbor Company"],
+  ["Springfield Chamber of Commerce","Missouri Chamber of Commerce"],["Springfield Chamber of Commerce","Community Partnership of the Ozarks"],
+  ["St. Francois Community Partnership","Kids Win Missouri"],["St. Francois Community Partnership","Missouri Action for Kids"],
+  ["Taney County Partnership","The Neighbor Company"],["Taney County Partnership","Silver Dollar City Foundation"],["Taney County Partnership","Kids Win Missouri"],["Taney County Partnership","Missouri Chamber of Commerce"],
+  ["The Community Partnership","TKD Foundation"],["The Community Partnership","Kids Win Missouri"],
+  ["The Neighbor Company","Silver Dollar City Foundation"],["The Neighbor Company","Taney County Partnership"],
+  ["TKD Foundation","The Community Partnership"],
+  ["United Way of Greater St. Joseph","Community Action Partnership of Greater St. Joseph"],["United Way of Greater St. Joseph","Kids Win Missouri"],
+  ["United Way of Southeast Missouri","Community Partnership of Southeast Missouri"],["United Way of Southeast Missouri","Kids Win Missouri"],
+  ["United WE","Missouri Chamber of Commerce"],["United WE","Kids Win Missouri"],
+  ["Upward Momentum","Missouri Foundation for Health"],["Upward Momentum","McDonnell Foundation"],["Upward Momentum","Kids Win Missouri"],
+  ["Veterans United","Heart of Missouri United Way"],["Veterans United","William Guitar Little Foundation"],
+  ["WEPOWER","Kids Win Missouri"],["WEPOWER","Missouri Budget Project"],
+  ["William Guitar Little Foundation","Heart of Missouri United Way"],["William Guitar Little Foundation","Veterans United"]
+];
+
+const TYPE_COLORS = {
+  "Nonprofit Organization": "#185FA5",
+  "Private Foundation": "#0F6E56",
+  "Employer Association": "#BA7517",
+  "Quasi-Governmental Entity": "#534AB7",
+  "Social Welfare Organization": "#993556",
+  "Economic Development Organization": "#A32D2D",
+  "Community Foundation": "#3B6D11",
+  "Funder Collaborative": "#3B6D11",
+};
+const TYPE_FILLS = {
+  "Nonprofit Organization": "#ddeef9",
+  "Private Foundation": "#d4f0e5",
+  "Employer Association": "#fef0d0",
+  "Quasi-Governmental Entity": "#e8e6fb",
+  "Social Welfare Organization": "#f8dce9",
+  "Economic Development Organization": "#fae0e0",
+  "Community Foundation": "#e0f2d0",
+  "Funder Collaborative": "#e0f2d0",
+};
+
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const DPR = window.devicePixelRatio || 1;
+let W, H;
+
+function resize() {
+  const rect = canvas.parentElement.getBoundingClientRect();
+  W = rect.width;
+  H = Math.max(500, Math.min(700, W * 0.75));
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  canvas.width = W * DPR;
+  canvas.height = H * DPR;
+  ctx.scale(DPR, DPR);
+  if (nodes.length && tick === 0) initPositions();
+  draw();
+}
+
+const nodes = nodes_data.map(d => ({...d, x: 0, y: 0, vx: 0, vy: 0, visible: true}));
+const nodeIndex = {};
+nodes.forEach((n,i) => nodeIndex[n.id] = i);
+
+const edgeSet = new Set();
+const edges = [];
+raw_edges.forEach(([a,b]) => {
+  const key = [a,b].sort().join('||');
+  if (!edgeSet.has(key) && nodeIndex[a]!==undefined && nodeIndex[b]!==undefined) {
+    edgeSet.add(key);
+    edges.push({a: nodeIndex[a], b: nodeIndex[b]});
+  }
+});
+
+nodes.forEach(n => n.degree = 0);
+edges.forEach(e => { nodes[e.a].degree++; nodes[e.b].degree++; });
+const maxDeg = Math.max(...nodes.map(n=>n.degree));
+
+function nodeRadius(n) { return 5 + (n.degree / maxDeg) * 15; }
+
+function initPositions() {
+  const cx = W/2, cy = H/2;
+  nodes.forEach((n,i) => {
+    if (n.id === "Kids Win Missouri") { n.x = cx; n.y = cy; return; }
+    const angle = (i / nodes.length) * 2 * Math.PI;
+    const r = Math.min(W,H) * 0.35;
+    n.x = cx + r * Math.cos(angle) + (Math.random()-0.5)*50;
+    n.y = cy + r * Math.sin(angle) + (Math.random()-0.5)*50;
+  });
+}
+
+let pan = {x:0,y:0,scale:1};
+let dragging = false, dragStart = null, panStart = null;
+let hoveredNode = null, selectedNode = null;
+let typeFilter = 'all', searchFilter = '';
+let tick = 0, simRunning = true;
+
+function simStep() {
+  if (!simRunning) return;
+  const alpha = Math.max(0.01, 0.3 * Math.exp(-tick/120));
+  tick++;
+  if (tick > 500) { simRunning = false; return; }
+  const cx = W/2, cy = H/2;
+  for (let i=0;i<nodes.length;i++) {
+    for (let j=i+1;j<nodes.length;j++) {
+      const dx = nodes[j].x-nodes[i].x, dy = nodes[j].y-nodes[i].y;
+      const d = Math.sqrt(dx*dx+dy*dy)+1;
+      const f = 900/(d*d);
+      nodes[i].vx -= dx/d*f; nodes[i].vy -= dy/d*f;
+      nodes[j].vx += dx/d*f; nodes[j].vy += dy/d*f;
+    }
+  }
+  edges.forEach(e => {
+    const a=nodes[e.a], b=nodes[e.b];
+    const dx=b.x-a.x, dy=b.y-a.y, d=Math.sqrt(dx*dx+dy*dy)+1;
+    const f=(d-85)*0.03;
+    a.vx+=dx/d*f; a.vy+=dy/d*f; b.vx-=dx/d*f; b.vy-=dy/d*f;
+  });
+  nodes.forEach(n => {
+    n.vx += (cx-n.x)*0.008*alpha; n.vy += (cy-n.y)*0.008*alpha;
+  });
+  if (tick<60) {
+    const k=nodes[nodeIndex["Kids Win Missouri"]];
+    k.vx+=(cx-k.x)*0.5; k.vy+=(cy-k.y)*0.5;
+  }
+  nodes.forEach(n => {
+    n.vx*=0.7; n.vy*=0.7;
+    n.x+=n.vx*alpha; n.y+=n.vy*alpha;
+    n.x=Math.max(30,Math.min(W-30,n.x)); n.y=Math.max(30,Math.min(H-30,n.y));
+  });
+}
+
+function draw() {
+  ctx.clearRect(0,0,W,H);
+  ctx.save();
+  ctx.translate(pan.x,pan.y);
+  ctx.scale(pan.scale,pan.scale);
+
+  edges.forEach(e => {
+    const a=nodes[e.a], b=nodes[e.b];
+    if(!a.visible||!b.visible) return;
+    const hi = selectedNode!==null && (e.a===selectedNode||e.b===selectedNode);
+    ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y);
+    ctx.strokeStyle = hi ? 'rgba(0,0,0,0.35)' : 'rgba(0,0,0,0.07)';
+    ctx.lineWidth = hi ? 1.8 : 0.8;
+    ctx.stroke();
+  });
+
+  nodes.forEach((n,i) => {
+    if(!n.visible) return;
+    const r = nodeRadius(n);
+    const isSel = selectedNode===i, isHov = hoveredNode===i;
+    const isConn = selectedNode!==null && edges.some(e=>(e.a===selectedNode&&e.b===i)||(e.b===selectedNode&&e.a===i));
+    const dimmed = selectedNode!==null && !isSel && !isConn;
+    ctx.globalAlpha = dimmed ? 0.2 : 1;
+    ctx.beginPath(); ctx.arc(n.x,n.y,r+(isSel||isHov?2:0),0,Math.PI*2);
+    ctx.fillStyle = TYPE_FILLS[n.type]||'#eee';
+    ctx.fill();
+    ctx.strokeStyle = TYPE_COLORS[n.type]||'#888';
+    ctx.lineWidth = isSel?2:1;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+    if(isSel||isHov||n.degree>=8) {
+      const label = n.id.length>22?n.id.slice(0,20)+'…':n.id;
+      ctx.font = `${isSel?'bold ':''} 11px Arial`;
+      ctx.fillStyle = dimmed?'#aaa':'#333';
+      ctx.globalAlpha = dimmed?0.2:1;
+      ctx.textAlign='center';
+      ctx.fillText(label, n.x, n.y+r+13);
+      ctx.globalAlpha=1;
+    }
+  });
+  ctx.restore();
+}
+
+function getNodeAt(ex,ey) {
+  const mx=(ex-pan.x)/pan.scale, my=(ey-pan.y)/pan.scale;
+  for(let i=nodes.length-1;i>=0;i--) {
+    const n=nodes[i]; if(!n.visible) continue;
+    if((mx-n.x)**2+(my-n.y)**2<(nodeRadius(n)+5)**2) return i;
+  }
+  return null;
+}
+
+canvas.addEventListener('mousemove', e => {
+  const rect=canvas.getBoundingClientRect();
+  const ex=e.clientX-rect.left, ey=e.clientY-rect.top;
+  if(dragging){pan.x=panStart.x+(e.clientX-dragStart.x);pan.y=panStart.y+(e.clientY-dragStart.y);draw();return;}
+  hoveredNode=getNodeAt(ex,ey);
+  canvas.style.cursor=hoveredNode!==null?'pointer':'grab';
+  const tt=document.getElementById('tooltip');
+  if(hoveredNode!==null) {
+    const n=nodes[hoveredNode];
+    tt.style.display='block'; tt.style.left=(e.clientX+14)+'px'; tt.style.top=(e.clientY-10)+'px';
+    tt.innerHTML=`<strong>${n.id}</strong><br><span style="color:#888">${n.type}</span><br>${n.geo}<br><em>${n.focus}</em>`;
+  } else tt.style.display='none';
+  draw();
+});
+
+canvas.addEventListener('mouseleave',()=>{hoveredNode=null;document.getElementById('tooltip').style.display='none';draw();});
+
+canvas.addEventListener('mousedown', e => {
+  const rect=canvas.getBoundingClientRect();
+  const idx=getNodeAt(e.clientX-rect.left,e.clientY-rect.top);
+  if(idx!==null) {
+    selectedNode=selectedNode===idx?null:idx;
+    showInfo(selectedNode!==null?nodes[selectedNode]:null);
+    draw();
+  } else {
+    dragging=true; dragStart={x:e.clientX,y:e.clientY}; panStart={x:pan.x,y:pan.y};
+  }
+});
+
+canvas.addEventListener('mouseup',()=>{dragging=false;});
+
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  const rect=canvas.getBoundingClientRect();
+  const mx=e.clientX-rect.left, my=e.clientY-rect.top;
+  const ns=Math.max(0.3,Math.min(3,pan.scale*(1-e.deltaY*0.001)));
+  pan.x=mx-(mx-pan.x)*ns/pan.scale; pan.y=my-(my-pan.y)*ns/pan.scale; pan.scale=ns; draw();
+},{passive:false});
+
+// Touch support
+let lastTouchDist=0;
+canvas.addEventListener('touchstart', e=>{
+  if(e.touches.length===2) lastTouchDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+  else if(e.touches.length===1){
+    const rect=canvas.getBoundingClientRect();
+    const idx=getNodeAt(e.touches[0].clientX-rect.left,e.touches[0].clientY-rect.top);
+    if(idx!==null){selectedNode=selectedNode===idx?null:idx;showInfo(selectedNode!==null?nodes[selectedNode]:null);draw();}
+    else{dragging=true;dragStart={x:e.touches[0].clientX,y:e.touches[0].clientY};panStart={x:pan.x,y:pan.y};}
+  }
+},{passive:true});
+canvas.addEventListener('touchmove',e=>{
+  if(e.touches.length===2){
+    const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+    const ns=Math.max(0.3,Math.min(3,pan.scale*d/lastTouchDist));
+    pan.scale=ns; lastTouchDist=d; draw();
+  } else if(dragging&&e.touches.length===1){
+    pan.x=panStart.x+(e.touches[0].clientX-dragStart.x);pan.y=panStart.y+(e.touches[0].clientY-dragStart.y);draw();
+  }
+},{passive:true});
+canvas.addEventListener('touchend',()=>{dragging=false;});
+
+function showInfo(n) {
+  const p=document.getElementById('info-panel');
+  if(!n){p.style.display='none';return;}
+  p.style.display='block';
+  document.getElementById('ip-name').textContent=n.id;
+  const conns=edges.filter(e=>e.a===nodeIndex[n.id]||e.b===nodeIndex[n.id])
+    .map(e=>e.a===nodeIndex[n.id]?nodes[e.b].id:nodes[e.a].id);
+  document.getElementById('ip-body').innerHTML=
+    `<div style="margin-bottom:6px"><span style="color:#1a3a5c;font-weight:600">${n.type}</span> &middot; ${n.geo}</div>`+
+    `<div style="margin-bottom:6px"><strong>Focus:</strong> ${n.focus}</div>`+
+    `<div style="margin-bottom:6px"><strong>Activities:</strong> ${n.tags}</div>`+
+    `<div><strong>Connections (${conns.length}):</strong><br>${conns.map(c=>`<span class="tag">${c}</span>`).join('')}</div>`;
+}
+
+function filterSearch(q) { searchFilter=q.toLowerCase(); applyFilters(); }
+
+function applyFilters() {
+  nodes.forEach(n => {
+    n.visible = (typeFilter==='all'||n.type.includes(typeFilter)) && (!searchFilter||n.id.toLowerCase().includes(searchFilter));
+  });
+  draw();
+}
+
+document.querySelectorAll('.filter-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active'); typeFilter=btn.dataset.type; applyFilters();
+  });
+});
+
+// Build legend
+const legDiv=document.getElementById('legend');
+Object.entries(TYPE_COLORS).forEach(([type,color])=>{
+  const label=type==="Economic Development Organization"?"Econ Dev":type==="Quasi-Governmental Entity"?"Quasi-Gov":type==="Social Welfare Organization"?"Social Welfare":type==="Employer Association"?"Chamber/Business":type==="Nonprofit Organization"?"Nonprofit":type==="Private Foundation"?"Foundation":type==="Community Foundation"?"Comm. Foundation":"Funder Collaborative";
+  legDiv.innerHTML+=`<div class="leg"><div class="leg-dot" style="background:${color}"></div><span>${label}</span></div>`;
+});
+
+window.addEventListener('resize', resize);
+resize();
+
+function loop() {
+  for(let i=0;i<3;i++) simStep();
+  draw();
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
+</body>
+</html>
